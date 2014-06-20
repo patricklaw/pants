@@ -80,6 +80,8 @@ class ScalaLibraryTest(BaseTest):
     self.java_library_no_dep = self.target('java:no_scala_dep')
 
   def test_mixed_linkage(self):
+    print(set(self.lib_hub_and_spoke.jar_dependencies))
+    print(set(self.scala_library.jar_dependencies))
     self.assertEqual(set(self.lib_hub_and_spoke.jar_dependencies),
                      set(self.scala_library.jar_dependencies),
                      'The scala end of a mixed language logical lib should be linked with the java'

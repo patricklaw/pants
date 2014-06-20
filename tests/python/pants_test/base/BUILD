@@ -111,6 +111,9 @@ python_tests(
     pants('src/python/pants/backend/jvm/targets:java'),
     pants('src/python/pants/backend/jvm/targets:jvm'),
     pants('src/python/pants/backend/jvm/targets:scala'),
+    pants('src/python/pants/base:build_file'),
+    pants('src/python/pants/base:build_file_parser'),
+    pants('src/python/pants/base:target'),
     pants('tests/python/pants_test:base_test'),
     pants('src/python/pants/util:dirutil'),
   ]
