@@ -16,6 +16,7 @@ from twitter.common.process.process_provider import ProcessProvider
 
 from pants.base.address import SyntheticAddress
 from pants.base.build_environment import get_buildroot
+from pants.base.build_graph import BuildGraph
 from pants.base.source_root import SourceRoot
 from pants.base.target import Target
 from pants.base.workunit import WorkUnit
@@ -67,11 +68,13 @@ class Context(object):
       self._run_tracker.log(Report.FATAL, *msg_elements)
 
   def __init__(self, config, options, run_tracker, target_roots, requested_goals=None,
-               lock=None, log=None, target_base=None, build_graph=None, build_file_parser=None):
+               lock=None, log=None, target_base=None, build_graph=None, build_file_parser=None,
+               address_mapper=None):
     self._config = config
     self._options = options
     self.build_graph = build_graph
     self.build_file_parser = build_file_parser
+    self.address_mapper = address_mapper
     self.run_tracker = run_tracker
     self._lock = lock or Lock.unlocked()
     self._log = log or Context.Log(run_tracker)
@@ -256,5 +259,26 @@ class Context(object):
 
   def resolve(self, spec):
     """Returns an iterator over the target(s) the given address points to."""
-    self.build_file_parser.inject_spec_closure_into_build_graph(spec, self.build_graph)
+    self.build_graph.inject_spec_closure(self.address_mapper, spec)
     return self.build_graph.transitive_subgraph_of_addresses([SyntheticAddress.parse(spec)])
+
+  def scan(self, root=None):
+    """Scans and parses all BUILD files found under ``root``.
+
+    Only BUILD files found under ``root`` are parsed as roots in the graph, but any dependencies of
+    targets parsed in the root tree's BUILD files will be followed and this may lead to BUILD files
+    outside of ``root`` being parsed and included in the returned build graph.
+
+    :param string root: The path to scan; by default, the build root.
+    :returns: A new build graph encapsulating the targets found.
+    """
+    build_graph = BuildGraph()
+    for address in self.address_mapper.scan_addresses(root):
+      build_graph.inject_address_closure(address, self.address_mapper)
+    return build_graph
+
+  @contextmanager
+  def state(self, key, default=None):
+    value = self._state.get(key, default)
+    yield value
+    self._state[key] = value

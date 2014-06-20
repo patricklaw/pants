@@ -15,6 +15,7 @@ from pants.base.fingerprint_strategy import DefaultFingerprintStrategy
 from pants.base.hash_utils import hash_all
 from pants.base.payload import EmptyPayload
 from pants.base.source_root import SourceRoot
+from pants.base.target_addressable import TargetAddressable
 
 
 class AbstractTarget(object):
@@ -125,6 +126,12 @@ class Target(AbstractTarget):
           return True
       return False
     return (cls.LANG_DISCRIMINATORS[lang], is_other_lang)
+
+  @classmethod
+  def get_addressable_type(cls):
+    class ConcreteTargetAddressable(TargetAddressable):
+      target_type = cls
+    return ConcreteTargetAddressable
 
   @property
   def target_base(self):

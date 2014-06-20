@@ -7,7 +7,8 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 
 import os
 
-from twitter.common.collections import OrderedSet
+from twitter.common.collections import maybe_list, OrderedSet
+from twitter.common.lang import Compatibility
 
 from pants.base.address import BuildFileAddress, parse_spec
 from pants.base.build_file import BuildFile
@@ -34,9 +35,9 @@ class CmdLineSpecParser(object):
   The above expression would choose every target under src except for src/broken:test
   """
 
-  def __init__(self, root_dir, build_file_parser):
+  def __init__(self, root_dir, address_mapper):
     self._root_dir = root_dir
-    self._build_file_parser = build_file_parser
+    self._address_mapper = address_mapper
 
   def parse_addresses(self, specs):
     """Process a list of command line specs and perform expansion.  This method can expand a list
@@ -46,8 +47,7 @@ class CmdLineSpecParser(object):
     :return: a generator of specs parsed into addresses.
     """
 
-    if isinstance(specs, basestring):
-      specs = [ specs ]
+    specs = maybe_list(specs, Compatibility.string)
 
     addresses = OrderedSet()
     addresses_to_remove = set()
@@ -74,21 +74,17 @@ class CmdLineSpecParser(object):
       spec_path = spec[:-len('::')]
       spec_dir = normalize_spec_path(spec_path)
       for build_file in BuildFile.scan_buildfiles(self._root_dir, spec_dir):
-        self._build_file_parser.parse_build_file(build_file)
-        for address in self._build_file_parser.addresses_by_build_file[build_file]:
+        for address in self._address_mapper.addresses_in_spec_path(build_file.spec_path):
           yield address
     elif spec.endswith(':'):
       spec_path = spec[:-len(':')]
       spec_dir = normalize_spec_path(spec_path)
-      for build_file in BuildFile(self._root_dir, spec_dir).family():
-        self._build_file_parser.parse_build_file(build_file)
-        for address in self._build_file_parser.addresses_by_build_file[build_file]:
+      for build_file in BuildFile.from_cache(self._root_dir, spec_dir).family():
+        for address in self._address_mapper.addresses_in_spec_path(spec_dir):
           yield address
     else:
       spec_parts = spec.rsplit(':', 1)
       spec_parts[0] = normalize_spec_path(spec_parts[0])
       spec_path, target_name = parse_spec(':'.join(spec_parts))
-
-      build_file = BuildFile(self._root_dir, spec_path)
+      build_file = BuildFile.from_cache(self._root_dir, spec_path)
       yield BuildFileAddress(build_file, target_name)
-
