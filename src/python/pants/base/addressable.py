@@ -34,6 +34,11 @@ class AddressableCallProxy(object):
       self._registration_callback(address, addressable)
     return addressable
 
+  def __repr__(self):
+    return ('AddressableCallProxy(addressable_type={target_type}, build_file={build_file})'
+            .format(target_type=self._addressable_type,
+                    build_file=self._build_file))
+
 
 class Addressable(AbstractClass):
   class AddressableInitError(Exception): pass

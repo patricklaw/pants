@@ -71,20 +71,19 @@ class CmdLineSpecParser(object):
       return normalized
 
     if spec.endswith('::'):
+      addresses = set()
       spec_path = spec[:-len('::')]
       spec_dir = normalize_spec_path(spec_path)
       for build_file in BuildFile.scan_buildfiles(self._root_dir, spec_dir):
-        for address in self._address_mapper.addresses_in_spec_path(build_file.spec_path):
-          yield address
+        address.update(self._address_mapper.addresses_in_spec_path(build_file.spec_path))
+      return addresses
     elif spec.endswith(':'):
       spec_path = spec[:-len(':')]
       spec_dir = normalize_spec_path(spec_path)
-      for build_file in BuildFile.from_cache(self._root_dir, spec_dir).family():
-        for address in self._address_mapper.addresses_in_spec_path(spec_dir):
-          yield address
+      return set(self._address_map.addresses_in_spec_path(spec_dir))
     else:
       spec_parts = spec.rsplit(':', 1)
       spec_parts[0] = normalize_spec_path(spec_parts[0])
       spec_path, target_name = parse_spec(':'.join(spec_parts))
       build_file = BuildFile.from_cache(self._root_dir, spec_path)
-      yield BuildFileAddress(build_file, target_name)
+      return set([BuildFileAddress(build_file, target_name)])
