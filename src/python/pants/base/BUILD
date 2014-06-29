@@ -80,6 +80,15 @@ python_library(
 )
 
 python_library(
+  name = 'build_file_manipulator',
+  sources = ['build_file_manipulator.py'],
+  dependencies = [
+    pants(':build_file'),
+    pants(':address'),
+  ]
+)
+
+python_library(
   name = 'build_file_parser',
   sources = ['build_file_parser.py'],
   dependencies = [
