@@ -32,6 +32,7 @@ python_test_suite(
     ':build_file',
     ':build_file_address_mapper',
     ':build_file_aliases',
+    ':build_file_manipulator',
     ':build_file_parser',
     ':build_invalidator',
     ':build_root',
@@ -107,6 +108,17 @@ python_tests(
   dependencies = [
     'src/python/pants/base:build_file_aliases',
     'src/python/pants/base:target',
+  ]
+)
+
+
+python_tests(
+  name = 'build_file_manipulator',
+  sources = ['test_build_file_manipulator.py'],
+  dependencies = [
+    'src/python/pants/base:build_file',
+    'src/python/pants/base:build_file_manipulator',
+    'tests/python/pants_test:base_test',
   ]
 )
 
