@@ -11,6 +11,7 @@ python_library(
     'src/python/pants/base:build_environment',
     'src/python/pants/base:build_file',
     'src/python/pants/base:build_file_address_mapper',
+    'src/python/pants/base:build_file_manipulator',
     'src/python/pants/base:build_file_parser',
     'src/python/pants/base:build_graph',
     'src/python/pants/base:cmd_line_spec_parser',
