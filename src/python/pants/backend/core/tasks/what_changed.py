@@ -74,7 +74,7 @@ class WhatChanged(ConsoleTask):
       address_mapper = self.context.address_mapper
       address_map = build_file_parser.parse_build_file(build_file)
       for address, _ in address_map.items():
-        build_graph.inject_address_closure(address, address_mapper)
+        build_graph.inject_address_closure(address)
       is_build_file = (build_file.full_path == os.path.join(get_buildroot(), path))
 
       for target in build_graph.sorted_targets():

@@ -22,9 +22,10 @@ class Utf8HeaderTest(unittest.TestCase):
     Look through all .py files and ensure they start with the line '# coding=utf8'
     """
 
-    build_file_parser = BuildFileParser(get_buildroot())
+    build_configuration = load_build_configuration_from_source()
+    build_file_parser = BuildFileParser(root_dir=get_buildroot(),
+                                        build_configuration=build_configuration)
     address_mapper = AddressMapper(build_file_parser)
-    load_backends_from_source(build_file_parser)
     build_graph = BuildGraph(address_mapper=address_mapper)
 
     for address in address_mapper.scan_addresses(get_buildroot()):

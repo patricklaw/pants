@@ -75,12 +75,12 @@ class CmdLineSpecParser(object):
       spec_path = spec[:-len('::')]
       spec_dir = normalize_spec_path(spec_path)
       for build_file in BuildFile.scan_buildfiles(self._root_dir, spec_dir):
-        address.update(self._address_mapper.addresses_in_spec_path(build_file.spec_path))
+        addresses.update(self._address_mapper.addresses_in_spec_path(build_file.spec_path))
       return addresses
     elif spec.endswith(':'):
       spec_path = spec[:-len(':')]
       spec_dir = normalize_spec_path(spec_path)
-      return set(self._address_map.addresses_in_spec_path(spec_dir))
+      return set(self._address_mapper.addresses_in_spec_path(spec_dir))
     else:
       spec_parts = spec.rsplit(':', 1)
       spec_parts[0] = normalize_spec_path(spec_parts[0])

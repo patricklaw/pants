@@ -42,13 +42,6 @@ class BuildFileParser(object):
     self._root_dir = root_dir
     self.run_tracker = run_tracker
 
-    self._target_proxy_by_address = {}
-    self._target_proxies_by_build_file = defaultdict(set)
-    self._added_build_files = set()
-    self._added_build_file_families = set()
-
-    self.addresses_by_build_file = defaultdict(set)
-
   def registered_aliases(self):
     """Returns a copy of the registered build file aliases this build file parser uses."""
     return self._build_configuration.registered_aliases()
@@ -123,14 +116,14 @@ class BuildFileParser(object):
     return address_map
 
   def parse_build_file_family(self, build_file, extra_parse_context=None):
-    family_address_map_by_build_file = {}  # {build_file: {addressable: address}}
+    family_address_map_by_build_file = {}  # {build_file: {address: addressable}}
     for bf in build_file.family():
       bf_address_map = self.parse_build_file(bf, extra_parse_context=extra_parse_context)
       for address, addressable in bf_address_map.items():
         for sibling_build_file, sibling_address_map in family_address_map_by_build_file.items():
           if address in sibling_address_map:
             raise BuildFileParser.SiblingConflictException(
-              "Both {conflicting_file} and {addressable_file} define the same address"
+              "Both {conflicting_file} and {addressable_file} define the same address: "
               "'{target_name}'"
               .format(conflicting_file=sibling_build_file,
                       addressable_file=address.build_file,
@@ -146,37 +139,6 @@ class BuildFileParser(object):
 
     logger.debug("Parsing BUILD file {build_file}."
                  .format(build_file=build_file))
-
-    parse_context = {}
-
-    # TODO(pl): Don't inject __file__ into the context.  BUILD files should not be aware
-    # of their location on the filesystem.
-    parse_context['__file__'] = build_file.full_path
-
-    parse_context.update(self._exposed_objects)
-    parse_context.update(
-      (key, partial(util, rel_path=build_file.spec_path)) for
-      key, util in self._partial_path_relative_utils.items()
-    )
-    parse_context.update(
-      (key, util(rel_path=build_file.spec_path)) for
-      key, util in self._applicative_path_relative_utils.items()
-    )
-
-    registered_addressable_instances = []
-    def registration_callback(address, addressable):
-      registered_addressable_instances.append((address, addressable))
-
-    parse_context.update(
-      (alias, AddressableCallProxy(addressable_type=addressable_type,
-                                   build_file=build_file,
-                                   registration_callback=registration_callback)) for
-      alias, addressable_type in self._addressable_alias_map.items()
-    )
-
-    for key, func in self._target_creation_utils.items():
-      parse_context.update({key: partial(func, alias_map=parse_context)})
-    parse_context.update(extra_parse_context or {})
 
     try:
       build_file_code = build_file.code()
@@ -194,7 +156,7 @@ class BuildFileParser(object):
       raise
 
     address_map = {}
-    for address, addressable in registered_addressable_instances:
+    for address, addressable in parse_state.registered_addressable_instances:
       logger.debug('Adding {addressable} to the BuildFileParser address map with {address}'
                    .format(addressable=addressable,
                            address=address))

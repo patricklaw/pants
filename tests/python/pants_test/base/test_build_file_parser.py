@@ -31,7 +31,7 @@ class ErrorTarget(Target):
 
 
 class BuildFileParserBasicsTest(BaseTest):
-  def test_target_proxy_exceptions(self):
+  def test_addressable_exceptions(self):
     self.add_to_build_file('a/BUILD', 'dependencies()')
     build_file_a = BuildFile(self.build_root, 'a/BUILD')
 
@@ -58,10 +58,10 @@ class BuildFileParserBasicsTest(BaseTest):
       self.build_file_parser.parse_build_file(build_file_d)
 
   def test_noop_parse(self):
-    with self.workspace('BUILD') as root_dir:
-      build_file = BuildFile(root_dir, '')
-      address_map = set(self.build_file_parser.parse_build_file(build_file))
-      self.assertEqual(len(address_map), 0)
+    self.add_to_build_file('BUILD', '')
+    build_file = BuildFile(self.build_root, '')
+    address_map = set(self.build_file_parser.parse_build_file(build_file))
+    self.assertEqual(len(address_map), 0)
 
 
 class BuildFileParserTargetTest(BaseTest):
@@ -70,12 +70,9 @@ class BuildFileParserTargetTest(BaseTest):
     return BuildFileAliases.create(targets={'fake': ErrorTarget})
 
   def test_trivial_target(self):
-    with self.workspace('BUILD') as root_dir:
-      with open(os.path.join(root_dir, 'BUILD'), 'w') as build:
-        build.write('''fake(name='foozle')''')
-
-      build_file = BuildFile(root_dir, 'BUILD')
-      address_map = self.build_file_parser.parse_build_file(build_file)
+    self.add_to_build_file('BUILD', '''fake(name='foozle')''')
+    build_file = BuildFile(self.build_root, 'BUILD')
+    address_map = self.build_file_parser.parse_build_file(build_file)
 
     self.assertEqual(len(address_map), 1)
     address, proxy = address_map.popitem()
@@ -84,66 +81,47 @@ class BuildFileParserTargetTest(BaseTest):
     self.assertEqual(proxy.target_type, ErrorTarget)
 
   def test_trivial_target(self):
-    with self.workspace('BUILD') as root_dir:
-      with open(os.path.join(root_dir, 'BUILD'), 'w') as build:
-        build.write('''fake(name='foozle')''')
-
-      build_file = BuildFile(root_dir, 'BUILD')
-      address_map = self.build_file_parser.parse_build_file(build_file)
-      self.assertEqual(len(address_map), 1)
-      address, addressable = address_map.popitem()
-      self.assertEqual(address, BuildFileAddress(build_file, 'foozle'))
-      self.assertEqual(addressable.name, 'foozle')
-      self.assertEqual(addressable.target_type, ErrorTarget)
-
-  def test_path_relative_util(self):
-    with self.workspace('a/b/c/BUILD') as root_dir:
-      def path_relative_util(foozle, rel_path):
-        self.assertEqual(rel_path, 'a/b/c')
-      alias_map = {'partial_path_relative_utils': {'fake_util': path_relative_util}}
-      self.build_file_parser.register_alias_groups(alias_map=alias_map)
-
-      with open(os.path.join(root_dir, 'a/b/c/BUILD'), 'w') as build:
-        build.write('''fake_util("baz")''')
-
-      build_file = BuildFile(root_dir, 'a/b/c/BUILD')
-      address_map = set(self.build_file_parser.parse_build_file(build_file))
-
-    self.assertEqual(len(address_map), 0)
+    self.add_to_build_file('BUILD', '''fake(name='foozle')''')
+    build_file = BuildFile(self.build_root, 'BUILD')
+    address_map = self.build_file_parser.parse_build_file(build_file)
+    self.assertEqual(len(address_map), 1)
+    address, addressable = address_map.popitem()
+    self.assertEqual(address, BuildFileAddress(build_file, 'foozle'))
+    self.assertEqual(addressable.name, 'foozle')
+    self.assertEqual(addressable.target_type, ErrorTarget)
 
   def test_sibling_build_files(self):
-    with self.workspace('./BUILD', './BUILD.foo', './BUILD.bar') as root_dir:
-      with open(os.path.join(root_dir, './BUILD'), 'w') as build:
-        build.write(dedent('''
-          fake(name="base",
-               dependencies=[
-                 ':foo',
-               ])
-        '''))
+    self.add_to_build_file('BUILD', dedent(
+      '''
+      fake(name="base",
+           dependencies=[
+             ':foo',
+           ])
+      '''))
 
-      with open(os.path.join(root_dir, './BUILD.foo'), 'w') as build:
-        build.write(dedent('''
-          fake(name="foo",
-               dependencies=[
-                 ':bat',
-               ])
-        '''))
+    self.add_to_build_file('BUILD.foo', dedent(
+      '''
+      fake(name="foo",
+           dependencies=[
+             ':bat',
+           ])
+      '''))
 
-      with open(os.path.join(root_dir, './BUILD.bar'), 'w') as build:
-        build.write(dedent('''
-          fake(name="bat")
-        '''))
+    self.add_to_build_file('./BUILD.bar', dedent(
+      '''
+      fake(name="bat")
+      '''))
 
-      bar_build_file = BuildFile(root_dir, 'BUILD.bar')
-      base_build_file = BuildFile(root_dir, 'BUILD')
-      foo_build_file = BuildFile(root_dir, 'BUILD.foo')
+    bar_build_file = BuildFile(self.build_root, 'BUILD.bar')
+    base_build_file = BuildFile(self.build_root, 'BUILD')
+    foo_build_file = BuildFile(self.build_root, 'BUILD.foo')
 
-      address_map = bfp.address_map_from_spec_path(bar_build_file.spec_path)
-      addresses = address_map.keys()
-      self.assertEqual(set([bar_build_file, base_build_file, foo_build_file]),
-                       set([address.build_file for address in addresses]))
-      self.assertEqual(set([':base', ':foo', ':bat']),
-                       set([address.spec for address in addresses]))
+    address_map = self.build_file_parser.address_map_from_spec_path(bar_build_file.spec_path)
+    addresses = address_map.keys()
+    self.assertEqual(set([bar_build_file, base_build_file, foo_build_file]),
+                     set([address.build_file for address in addresses]))
+    self.assertEqual(set([':base', ':foo', ':bat']),
+                     set([address.spec for address in addresses]))
 
   def test_build_file_duplicates(self):
     # This workspace has two targets in the same file with the same name.
@@ -156,32 +134,31 @@ class BuildFileParserTargetTest(BaseTest):
 
   def test_sibling_build_files_duplicates(self):
     # This workspace is malformed, you can't shadow a name in a sibling BUILD file
-    with self.workspace('./BUILD', './BUILD.foo', './BUILD.bar') as root_dir:
-      with open(os.path.join(root_dir, './BUILD'), 'w') as build:
-        build.write(dedent('''
-          fake(name="base",
-               dependencies=[
-                 ':foo',
-               ])
-        '''))
+    self.add_to_build_file('BUILD', dedent(
+      '''
+      fake(name="base",
+           dependencies=[
+             ':foo',
+           ])
+      '''))
 
-      with open(os.path.join(root_dir, './BUILD.foo'), 'w') as build:
-        build.write(dedent('''
-          fake(name="foo",
-               dependencies=[
-                 ':bat',
-               ])
-        '''))
+    self.add_to_build_file('BUILD.foo', dedent(
+      '''
+      fake(name="foo",
+           dependencies=[
+             ':bat',
+           ])
+      '''))
 
-      with open(os.path.join(root_dir, './BUILD.bar'), 'w') as build:
-        build.write(dedent('''
-          fake(name="base")
-        '''))
+    self.add_to_build_file('./BUILD.bar', dedent(
+      '''
+      fake(name="base")
+      '''))
 
-      with pytest.raises(BuildFileParser.SiblingConflictException):
-        base_build_file = BuildFile(root_dir, 'BUILD')
-        bf_address = BuildFileAddress(base_build_file, 'base')
-        self.build_file_parser.address_map_from_spec_path(bf_address.spec_path)
+    with pytest.raises(BuildFileParser.SiblingConflictException):
+      base_build_file = BuildFile(self.build_root, 'BUILD')
+      bf_address = BuildFileAddress(base_build_file, 'base')
+      self.build_file_parser.address_map_from_spec_path(bf_address.spec_path)
 
 
 class BuildFileParserExposedObjectTest(BaseTest):
@@ -190,13 +167,10 @@ class BuildFileParserExposedObjectTest(BaseTest):
     return BuildFileAliases.create(objects={'fake_object': object()})
 
   def test_exposed_object(self):
-    with self.workspace('BUILD') as root_dir:
-      with open(os.path.join(root_dir, 'BUILD'), 'w') as build:
-        build.write('''fake_object''')
-
-      build_file = BuildFile(root_dir, 'BUILD')
-      address_map = self.build_file_parser.parse_build_file(build_file)
-      self.assertEqual(len(address_map), 0)
+    self.add_to_build_file('BUILD', '''fake_object''')
+    build_file = BuildFile(self.build_root, 'BUILD')
+    address_map = self.build_file_parser.parse_build_file(build_file)
+    self.assertEqual(len(address_map), 0)
 
 
 class BuildFileParserExposedContextAwareObjectFactoryTest(BaseTest):
