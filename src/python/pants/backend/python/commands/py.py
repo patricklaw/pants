@@ -93,7 +93,7 @@ class Py(Command):
 
       try:
         print(self.root_dir, arg)
-        self.build_graph.inject_spec_closure(self.address_mapper, arg)
+        self.build_graph.inject_spec_closure(arg)
         spec_path, target_name = parse_spec(arg)
         build_file = BuildFile(self.root_dir, spec_path)
         address = BuildFileAddress(build_file, target_name)
