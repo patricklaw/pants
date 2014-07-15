@@ -139,7 +139,7 @@ class BaseTest(unittest2.TestCase):
     Returns the corresponding Target or else None if the address does not point to a defined Target.
     """
     if self.build_graph.get_target_from_spec(spec) is None:
-      self.build_graph.inject_spec_closure(self.address_mapper, spec)
+      self.build_graph.inject_spec_closure(spec)
     return self.build_graph.get_target_from_spec(spec)
 
   def create_files(self, path, files):

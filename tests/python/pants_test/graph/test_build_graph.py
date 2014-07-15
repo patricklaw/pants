@@ -57,7 +57,7 @@ class BuildGraphTest(unittest.TestCase):
       build_configuration = BuildConfiguration()
       build_configuration.register_target_alias('fake', Target)
       parser = BuildFileParser(build_configuration, root_dir=root_dir)
-      build_graph = BuildGraph()
+      build_graph = BuildGraph(self.address_mapper)
       parser.inject_spec_closure_into_build_graph(':foo', build_graph)
       self.assertEqual(len(build_graph.dependencies_of(SyntheticAddress.parse(':foo'))), 1)
 

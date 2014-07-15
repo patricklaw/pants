@@ -52,9 +52,10 @@ class ReverseDepmap(ConsoleTask):
     if self._dependees_type:
       base_paths = OrderedSet()
       for dependees_type in self._dependees_type:
-        if dependees_type not in self.context.build_file_parser.report_target_aliases():
+        target_aliases = self.context.build_file_parser.registered_aliases().targets
+        if dependees_type not in target_aliases:
           raise TaskError('Invalid type name: %s' % dependees_type)
-        target_type = self.context.build_file_parser.report_target_aliases()[dependees_type]
+        target_type = target_aliases[dependees_type]
         # Try to find the SourceRoot for the given input type
         try:
           roots = SourceRoot.roots(target_type)
@@ -80,7 +81,7 @@ class ReverseDepmap(ConsoleTask):
     for build_file in buildfiles:
       address_map = build_file_parser.parse_build_file(build_file)
       for address in address_map.keys():
-        build_graph.inject_address_closure(address, address_mapper)
+        build_graph.inject_address_closure(address)
       for address in address_map.keys():
         target = build_graph.get_target(address)
         # TODO(John Sirois): tighten up the notion of targets written down in a BUILD by a

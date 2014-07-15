@@ -22,8 +22,8 @@ class BuildGraph(object):
   Not necessarily connected.  Always serializable.
   """
 
-  def __init__(self, address_map, run_tracker=None):
-    self._address_map = address_map
+  def __init__(self, address_mapper, run_tracker=None):
+    self._address_mapper = address_mapper
     self.run_tracker = run_tracker
     self.reset()
 
@@ -202,7 +202,7 @@ class BuildGraph(object):
     self.inject_target(target, dependencies=dependencies, derived_from=derived_from)
 
   def inject_address(self, address):
-    target_addressable = self._address_map.resolve(address)
+    target_addressable = self._address_mapper.resolve(address)
 
     if not self.contains_address(address):
       target = self.target_addressable_to_target(address, target_addressable)
@@ -212,11 +212,13 @@ class BuildGraph(object):
     if address in self._addresses_already_closed:
       return
 
-    target_addressable = self._address_map.resolve(address)
+    mapper = self._address_mapper
+
+    target_addressable = mapper.resolve(address)
 
     self._addresses_already_closed.add(address)
-    dep_addresses = list(self._address_map.specs_to_addresses(target_addressable.dependency_specs,
-                                                              relative_to=address.spec_path))
+    dep_addresses = list(mapper.specs_to_addresses(target_addressable.dependency_specs,
+                                                   relative_to=address.spec_path))
     for dep_address in dep_addresses:
       self.inject_address_closure(dep_address)
 
@@ -240,7 +242,7 @@ class BuildGraph(object):
       target.mark_transitive_invalidation_hash_dirty()
 
   def inject_spec_closure(self, spec, relative_to=''):
-    address = self._address_map.spec_to_address(spec, relative_to=relative_to)
+    address = self._address_mapper.spec_to_address(spec, relative_to=relative_to)
     self.inject_address_closure(address)
     
   def target_addressable_to_target(self, address, addressable):

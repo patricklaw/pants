@@ -259,7 +259,7 @@ class Context(object):
 
   def resolve(self, spec):
     """Returns an iterator over the target(s) the given address points to."""
-    self.build_graph.inject_spec_closure(self.address_mapper, spec)
+    self.build_graph.inject_spec_closure(spec)
     return self.build_graph.transitive_subgraph_of_addresses([SyntheticAddress.parse(spec)])
 
   def scan(self, root=None):
@@ -272,9 +272,9 @@ class Context(object):
     :param string root: The path to scan; by default, the build root.
     :returns: A new build graph encapsulating the targets found.
     """
-    build_graph = BuildGraph()
+    build_graph = BuildGraph(self.address_mapper)
     for address in self.address_mapper.scan_addresses(root):
-      build_graph.inject_address_closure(address, self.address_mapper)
+      build_graph.inject_address_closure(address)
     return build_graph
 
   @contextmanager

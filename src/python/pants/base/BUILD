@@ -45,6 +45,7 @@ python_library(
   sources = ['build_configuration.py'],
   dependencies = [
     pants('3rdparty/python/twitter/commons:twitter.common.collections'),
+    pants(':addressable'),
     pants(':build_file_aliases'),
     pants(':parse_context'),
     pants(':target'),
