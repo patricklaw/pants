@@ -268,7 +268,7 @@ class SetupPy(Command):
     self._config = Config.load()
     self._root = self.root_dir
 
-    self.build_graph.inject_spec_closure(self.address_mapper, self.args[0])
+    self.build_graph.inject_spec_closure(self.args[0])
     self.target = self.build_graph.get_target_from_spec(self.args[0])
 
     if self.target is None:
