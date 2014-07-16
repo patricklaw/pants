@@ -546,6 +546,7 @@ class JarPublish(JarTask, ScmPublish):
       if no_changes:
         changelog = 'No changes for %s - forced push.\n' % jar_coordinate(jar, semver.version())
       else:
+        print(changelog)
         changelog = self.changelog(target, sha) or 'Direct dependencies changed.\n'
 
       if no_changes and not self.force:
