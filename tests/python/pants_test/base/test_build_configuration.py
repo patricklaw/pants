@@ -48,9 +48,6 @@ class BuildConfigurationTest(unittest2.TestCase):
     name, target_proxy = parse_state.registered_addressable_instances.pop()
     self.assertEqual('jake', target_proxy.name)
     self.assertEqual(Fred, target_proxy.target_type)
-    # TODO(pl): This is no longer available on Addressable instances.  Instead, check
-    # the address that was created for this in AddressMapper
-    # self.assertEqual(build_file, target_proxy.build_file)
 
   def test_register_bad_target_alias(self):
     with self.assertRaises(TypeError):

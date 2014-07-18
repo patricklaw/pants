@@ -9,7 +9,7 @@ from collections import namedtuple
 import inspect
 import logging
 
-from pants.base.addressable import AddressableCallProxy
+from pants.base.addressable import AddressableCallProxy, NameCallProxy
 from pants.base.build_file_aliases import BuildFileAliases
 from pants.base.parse_context import ParseContext
 from pants.base.target import Target
@@ -137,5 +137,7 @@ class BuildConfiguration(object):
 
     for alias, object_factory in self._exposed_context_aware_object_factories.items():
       parse_globals[alias] = object_factory(parse_context)
+
+    parse_globals['name'] = NameCallProxy(build_file, registration_callback)
 
     return self.ParseState(registered_addressable_instances, parse_globals)
