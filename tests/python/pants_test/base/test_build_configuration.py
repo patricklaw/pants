@@ -36,8 +36,9 @@ class BuildConfigurationTest(unittest2.TestCase):
     parse_state = self.build_configuration.initialize_parse_state(build_file)
 
     self.assertEqual(0, len(parse_state.registered_addressable_instances))
+    self.assertIn('name', parse_state.parse_globals)
 
-    self.assertEqual(2, len(parse_state.parse_globals))
+    self.assertEqual(3, len(parse_state.parse_globals))
 
     self.assertEqual(parse_state.parse_globals['__file__'],
                      os.path.realpath('/tmp/fred'))
@@ -69,8 +70,9 @@ class BuildConfigurationTest(unittest2.TestCase):
     parse_state = self.build_configuration.initialize_parse_state(build_file)
 
     self.assertEqual(0, len(parse_state.registered_addressable_instances))
+    self.assertIn('name', parse_state.parse_globals)
 
-    self.assertEqual(2, len(parse_state.parse_globals))
+    self.assertEqual(3, len(parse_state.parse_globals))
     self.assertEqual(parse_state.parse_globals['__file__'],
                      os.path.realpath('/tmp/jane'))
     self.assertEqual(42, parse_state.parse_globals['jane'])
@@ -136,8 +138,9 @@ class BuildConfigurationTest(unittest2.TestCase):
       parse_state = self.build_configuration.initialize_parse_state(build_file)
 
       self.assertEqual(0, len(parse_state.registered_addressable_instances))
+      self.assertIn('name', parse_state.parse_globals)
 
-      self.assertEqual(2, len(parse_state.parse_globals))
+      self.assertEqual(3, len(parse_state.parse_globals))
       self.assertEqual(os.path.realpath(build_file_path),
                        parse_state.parse_globals['__file__'])
       yield parse_state.parse_globals['george']
