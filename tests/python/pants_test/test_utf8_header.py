@@ -8,7 +8,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 import os
 import unittest2 as unittest
 
-from pants.base.address_mapper import AddressMapper
+from pants.base.build_file_address_mapper import BuildFileAddressMapper
 from pants.base.build_environment import get_buildroot
 from pants.base.build_file_parser import BuildFileParser
 from pants.base.build_graph import BuildGraph
@@ -25,7 +25,7 @@ class Utf8HeaderTest(unittest.TestCase):
     build_configuration = load_build_configuration_from_source()
     build_file_parser = BuildFileParser(root_dir=get_buildroot(),
                                         build_configuration=build_configuration)
-    address_mapper = AddressMapper(build_file_parser)
+    address_mapper = BuildFileAddressMapper(build_file_parser)
     build_graph = BuildGraph(address_mapper=address_mapper)
 
     for address in address_mapper.scan_addresses(get_buildroot()):

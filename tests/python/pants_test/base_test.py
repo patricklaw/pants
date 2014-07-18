@@ -13,7 +13,7 @@ import unittest2
 
 from pants.backend.core.targets.dependencies import Dependencies
 from pants.base.address import SyntheticAddress
-from pants.base.address_mapper import AddressMapper
+from pants.base.build_file_address_mapper import BuildFileAddressMapper
 from pants.base.build_configuration import BuildConfiguration
 from pants.base.build_file import BuildFile
 from pants.base.build_file_aliases import BuildFileAliases
@@ -67,6 +67,7 @@ class BaseTest(unittest2.TestCase):
     target:  A string containing the target definition as it would appear in a BUILD file.
     """
     self.create_file(self.build_path(relpath), target, mode='a')
+    return BuildFile(root_dir=self.build_root, relpath=self.build_path(relpath))
 
   def make_target(self,
                   spec='',
@@ -99,7 +100,7 @@ class BaseTest(unittest2.TestCase):
     build_configuration = BuildConfiguration()
     build_configuration.register_aliases(self.alias_groups)
     self.build_file_parser = BuildFileParser(build_configuration, self.build_root)
-    self.address_mapper = AddressMapper(self.build_file_parser)
+    self.address_mapper = BuildFileAddressMapper(self.build_file_parser)
     self.build_graph = BuildGraph(address_mapper=self.address_mapper)
 
   def config(self, overrides=''):

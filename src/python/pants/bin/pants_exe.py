@@ -16,8 +16,8 @@ from twitter.common.dirutil import Lock
 
 from pants.backend.jvm.tasks.nailgun_task import NailgunTask
 from pants.base.address import Address
-from pants.base.address_mapper import AddressMapper
 from pants.base.build_environment import get_buildroot, pants_version
+from pants.base.build_file_address_mapper import BuildFileAddressMapper
 from pants.base.build_file_parser import BuildFileParser
 from pants.base.build_graph import BuildGraph
 from pants.base.config import Config
@@ -155,7 +155,7 @@ def _run():
   build_file_parser = BuildFileParser(build_configuration=build_configuration,
                                       root_dir=root_dir,
                                       run_tracker=run_tracker)
-  address_mapper = AddressMapper(build_file_parser)
+  address_mapper = BuildFileAddressMapper(build_file_parser)
   build_graph = BuildGraph(run_tracker=run_tracker, address_mapper=address_mapper)
 
   command_class, command_args = _parse_command(root_dir, argv)

@@ -19,10 +19,8 @@ python_library(
   name = 'address_mapper',
   sources = ['address_mapper.py'],
   dependencies = [
+    pants('3rdparty/python/twitter/commons:twitter.common.lang'),
     pants(':address'),
-    pants(':address_pointer'),
-    pants(':build_file'),
-    pants(':build_environment'),
   ]
 )
 
@@ -71,6 +69,18 @@ python_library(
     pants('3rdparty/python/twitter/commons:twitter.common.collections'),
     pants('3rdparty/python/twitter/commons:twitter.common.lang'),
     pants('3rdparty/python/twitter/commons:twitter.common.python'),
+  ]
+)
+
+python_library(
+  name = 'build_file_address_mapper',
+  sources = ['build_file_address_mapper.py'],
+  dependencies = [
+    pants(':address'),
+    pants(':address_mapper'),
+    pants(':address_pointer'),
+    pants(':build_file'),
+    pants(':build_environment'),
   ]
 )
 

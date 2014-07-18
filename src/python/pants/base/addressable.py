@@ -11,13 +11,14 @@ from pants.base.address import BuildFileAddress
 
 
 class NameCallProxy(object):
-  def __init__(self, parse_context, registration_callback):
-    self._parse_context = parse_context
+  def __init__(self, build_file, registration_callback):
+    self._build_file = build_file
     self._registration_callback = registration_callback
 
-  def __call__(self, name, addressable):
-    address = BuildFileAddress(self._parse_context.build_file, name)
-    self._registration_callback(address, addressable)
+  def __call__(self, name, obj):
+    address = BuildFileAddress(self._build_file, name)
+    self._registration_callback(address, obj)
+    return obj
 
 
 class AddressableCallProxy(object):

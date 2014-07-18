@@ -13,7 +13,6 @@ import sys
 from twitter.common.lang import Compatibility
 
 from pants.base.address import BuildFileAddress, parse_spec, SyntheticAddress
-from pants.base.addressable import AddressableCallProxy
 from pants.base.build_environment import get_buildroot
 from pants.base.build_file import BuildFile
 from pants.base.build_graph import BuildGraph
@@ -148,6 +147,7 @@ class BuildFileParser(object):
       raise
 
     parse_state = self._build_configuration.initialize_parse_state(build_file)
+    parse_state.parse_globals.update(extra_parse_context or {})
     try:
       Compatibility.exec_function(build_file_code, parse_state.parse_globals)
     except Exception:
