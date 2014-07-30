@@ -13,7 +13,7 @@ import sys
 from twitter.common.lang import Compatibility
 
 from pants.base.address import BuildFileAddress, parse_spec, SyntheticAddress
-from pants.base.build_environment import get_buildroot
+from pants.base.build_environment import get_buildroot, pants_version
 from pants.base.build_file import BuildFile
 from pants.base.build_graph import BuildGraph
 
@@ -108,7 +108,8 @@ class BuildFileParser(object):
 
   def address_map_from_spec_path(self, spec_path, extra_parse_context=None):
     build_file = BuildFile.from_cache(self._root_dir, spec_path)
-    family_address_map_by_build_file = self.parse_build_file_family(build_file)
+    family_address_map_by_build_file = self.parse_build_file_family(build_file,
+                                                                    extra_parse_context)
     address_map = {}
     for build_file, sibling_address_map in family_address_map_by_build_file.items():
       address_map.update(sibling_address_map)

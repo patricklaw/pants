@@ -30,6 +30,11 @@ class AddressMapperTest(BaseTest):
       )
 
       name('bar', 'arbitrary object')
+
+      dependencies(
+        name = 'baz',
+        fake_arg = P(':bar'),
+      )
       '''
     ))
 
@@ -41,4 +46,7 @@ class AddressMapperTest(BaseTest):
 
     named_str = self.address_mapper.resolve_spec('//:bar')
     self.assertEqual(named_str, 'arbitrary object')
+
+    with_pointer = self.address_mapper.resolve_spec('//:baz')
+    self.assertEqual(with_pointer.kwargs['fake_arg'], named_str)
 
