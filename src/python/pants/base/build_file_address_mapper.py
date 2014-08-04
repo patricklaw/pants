@@ -33,10 +33,6 @@ class BuildFileAddressMapper(AddressMapper):
     else:
       return address_map[address]
 
-  def resolve_spec(self, spec):
-    address = SyntheticAddress.parse(spec)
-    return self.resolve(address)
-
   def address_map_from_spec_path(self, spec_path):
     if spec_path not in self._spec_path_to_address_map_map:
       address_map = self._build_file_parser.address_map_from_spec_path(spec_path)

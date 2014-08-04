@@ -206,7 +206,7 @@ class BuildGraph(object):
 
     if not self.contains_address(address):
       target = self.target_addressable_to_target(address, target_addressable)
-      build_graph.inject_target(target)
+      self.inject_target(target)
 
   def inject_address_closure(self, address):
     if address in self._addresses_already_closed:

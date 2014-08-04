@@ -24,7 +24,7 @@ class AddressMapper(AbstractClass):
 
   def resolve_spec(self, spec):
     '''Converts a spec to an address and maps it using `resolve`'''
-    address = SyntheticAddress(spec)
+    address = SyntheticAddress.parse(spec)
     return self.resolve(address)
 
   def address_map_from_spec_path(self, spec_path):
@@ -38,7 +38,7 @@ class AddressMapper(AbstractClass):
     '''A helper method for mapping a spec to the Address type this mapper works with.'''
 
   def specs_to_addresses(self, specs, relative_to=''):
-    '''The equivalent of `spec_to_address` for a group of specs all relative to the same path.''' 
+    '''The equivalent of `spec_to_address` for a group of specs all relative to the same path.'''
     for spec in specs:
       yield self.spec_to_address(spec, relative_to=relative_to)
 

@@ -8,7 +8,6 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 import os
 
 from twitter.common.collections import maybe_list, OrderedSet
-from twitter.common.lang import Compatibility
 
 from pants.base.address import BuildFileAddress, parse_spec
 from pants.base.build_file import BuildFile
@@ -47,7 +46,7 @@ class CmdLineSpecParser(object):
     :return: a generator of specs parsed into addresses.
     """
 
-    specs = maybe_list(specs, Compatibility.string)
+    specs = maybe_list(specs)
 
     addresses = OrderedSet()
     addresses_to_remove = set()

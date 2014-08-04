@@ -71,7 +71,6 @@ class WhatChanged(ConsoleTask):
     for build_file in self._candidate_owners(path):
       build_graph = self.context.build_graph
       build_file_parser = self.context.build_file_parser
-      address_mapper = self.context.address_mapper
       address_map = build_file_parser.parse_build_file(build_file)
       for address, _ in address_map.items():
         build_graph.inject_address_closure(address)
