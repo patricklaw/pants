@@ -16,6 +16,7 @@ python_library(
     pants('src/python/pants/base:config'),
     pants('src/python/pants/base:exceptions'),
     pants('src/python/pants/base:target'),
+    pants('src/python/pants/goal'),
     pants('src/python/pants/util:contextutil'),
     pants('src/python/pants/util:dirutil'),
     pants('tests/python/pants_test/base:context_utils'),

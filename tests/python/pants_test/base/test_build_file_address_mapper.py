@@ -18,9 +18,9 @@ from pants.base.addressable import Addressable
 from pants_test.base_test import BaseTest
 
 
-class AddressMapperTest(BaseTest):
+class BuildFileAddressMapperTest(BaseTest):
   def setUp(self):
-    super(AddressMapperTest, self).setUp()
+    super(BuildFileAddressMapperTest, self).setUp()
 
   def test_target_addressable(self):
     build_file = self.add_to_build_file('BUILD', dedent(
@@ -29,11 +29,8 @@ class AddressMapperTest(BaseTest):
         name = 'foozle'
       )
 
-      name('bar', 'arbitrary object')
-
       dependencies(
         name = 'baz',
-        fake_arg = P(':bar'),
       )
       '''
     ))
@@ -43,10 +40,4 @@ class AddressMapperTest(BaseTest):
 
     dependencies_addressable = self.address_mapper.resolve_spec('//:foozle')
     self.assertEqual(dependencies_addressable.target_type, Dependencies)
-
-    named_str = self.address_mapper.resolve_spec('//:bar')
-    self.assertEqual(named_str, 'arbitrary object')
-
-    with_pointer = self.address_mapper.resolve_spec('//:baz')
-    self.assertEqual(with_pointer.kwargs['fake_arg'], named_str)
 

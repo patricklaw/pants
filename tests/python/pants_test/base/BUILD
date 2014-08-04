@@ -30,6 +30,7 @@ python_test_suite(
     pants(':address'),
     pants(':build_configuration'),
     pants(':build_file'),
+    pants(':build_file_address_mapper'),
     pants(':build_file_aliases'),
     pants(':build_file_parser'),
     pants(':build_invalidator'),
