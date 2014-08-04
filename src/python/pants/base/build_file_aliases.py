@@ -13,8 +13,8 @@ import functools
 class BuildFileAliases(namedtuple('BuildFileAliases',
                                   ['targets',
                                    'objects',
-                                   'addressables',
-                                   'context_aware_object_factories'])):
+                                   'context_aware_object_factories',
+                                   'addressables'])):
   """A structure containing set of symbols to be exposed in BUILD files.
 
   There are three types of symbols that can be exposed:
@@ -34,15 +34,15 @@ class BuildFileAliases(namedtuple('BuildFileAliases',
   def create(cls,
              targets=None,
              objects=None,
-             addressables=None,
-             context_aware_object_factories=None):
+             context_aware_object_factories=None,
+             addressables=None):
     """A convenience constructor that can accept zero to all alias types."""
     def copy(orig):
       return orig.copy() if orig else {}
     return cls(copy(targets),
                copy(objects),
-               copy(addressables),
-               copy(context_aware_object_factories))
+               copy(context_aware_object_factories),
+               copy(addressables))
 
   @classmethod
   def curry_context(cls, wrappee):
