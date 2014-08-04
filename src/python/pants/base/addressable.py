@@ -10,17 +10,6 @@ from twitter.common.lang import AbstractClass
 from pants.base.address import BuildFileAddress
 
 
-class NameCallProxy(object):
-  def __init__(self, build_file, registration_callback):
-    self._build_file = build_file
-    self._registration_callback = registration_callback
-
-  def __call__(self, name, obj):
-    address = BuildFileAddress(self._build_file, name)
-    self._registration_callback(address, obj)
-    return obj
-
-
 class AddressableCallProxy(object):
   def __init__(self, addressable_type, build_file, registration_callback):
     self._addressable_type = addressable_type

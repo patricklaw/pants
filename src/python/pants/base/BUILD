@@ -25,11 +25,6 @@ python_library(
 )
 
 python_library(
-  name = 'address_pointer',
-  sources = ['address_pointer.py'],
-)
-
-python_library(
   name = 'addressable',
   sources = ['addressable.py'],
   dependencies = [
@@ -47,7 +42,6 @@ python_library(
     pants(':build_file_aliases'),
     pants(':parse_context'),
     pants(':target'),
-    pants(':target_proxy'),
   ],
 )
 
@@ -78,7 +72,6 @@ python_library(
   dependencies = [
     pants(':address'),
     pants(':address_mapper'),
-    pants(':address_pointer'),
     pants(':build_file'),
     pants(':build_environment'),
   ]
@@ -293,16 +286,6 @@ python_library(
     pants(':addressable'),
     pants(':exceptions'),
   ],
-)
-
-python_library(
-  name = 'target_proxy',
-  sources = ['target_proxy.py'],
-  dependencies = [
-    pants('3rdparty/python/twitter/commons:twitter.common.lang'),
-    pants(':address'),
-    pants(':exceptions'),
-  ]
 )
 
 python_library(

@@ -8,9 +8,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 from threading import Event
 
 from pants.base.address import BuildFileAddress, parse_spec, SyntheticAddress
-from pants.base.addressable import NameCallProxy
 from pants.base.address_mapper import AddressMapper
-from pants.base.address_pointer import AddressPointer
 from pants.base.build_file import BuildFile
 from pants.base.build_environment import get_buildroot
 
@@ -41,16 +39,8 @@ class BuildFileAddressMapper(AddressMapper):
 
   def address_map_from_spec_path(self, spec_path):
     if spec_path not in self._spec_path_to_address_map_map:
-      parse_finished_event = Event()
-      address_pointer = AddressPointer(rel_path=spec_path,
-                                       resolve_callback=self.resolve,
-                                       parse_finished_event=parse_finished_event)
-      extra_context = {
-        'P': address_pointer,
-      }
-      address_map = self._build_file_parser.address_map_from_spec_path(spec_path, extra_context)
+      address_map = self._build_file_parser.address_map_from_spec_path(spec_path)
       self._spec_path_to_address_map_map[spec_path] = address_map
-      parse_finished_event.set()
     return self._spec_path_to_address_map_map[spec_path]
 
   def addresses_in_spec_path(self, spec_path):
