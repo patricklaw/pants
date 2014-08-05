@@ -130,7 +130,7 @@ class BuildGraph(object):
     """Injects a dependency from `dependent` onto `dependency`.
 
     It is an error to inject a dependency if the dependent doesn't already exist, but the reverse
-      is not an error.
+    is not an error.
 
     :param Address dependent: The (already injected) address of a Target to which `dependency`
       is being added.
@@ -217,8 +217,8 @@ class BuildGraph(object):
     """Returns all transitive dependees of `address`.
 
     Note that this uses `walk_transitive_dependee_graph` and the predicate is passed through,
-      hence it trims graphs rather than just filtering out Targets that do not match the predicate.
-      See `walk_transitive_dependee_graph for more detail on `predicate`.
+    hence it trims graphs rather than just filtering out Targets that do not match the predicate.
+    See `walk_transitive_dependee_graph for more detail on `predicate`.
 
     :param list<Address> addresses: The root addresses to transitively close over.
     :param function predicate: The predicate passed through to `walk_transitive_dependee_graph`. 
@@ -231,8 +231,8 @@ class BuildGraph(object):
     """Returns all transitive dependencies of `address`.
 
     Note that this uses `walk_transitive_dependencies_graph` and the predicate is passed through,
-      hence it trims graphs rather than just filtering out Targets that do not match the predicate.
-      See `walk_transitive_dependencies_graph for more detail on `predicate`.
+    hence it trims graphs rather than just filtering out Targets that do not match the predicate.
+    See `walk_transitive_dependencies_graph for more detail on `predicate`.
 
     :param list<Address> addresses: The root addresses to transitively close over.
     :param function predicate: The predicate passed through to 
@@ -251,7 +251,7 @@ class BuildGraph(object):
     """Constructs and injects Target at `address` with optional `dependencies` and `derived_from`.
 
     This method is useful especially for codegen, where a "derived" Target is injected
-      programmatically rather than read in from a BUILD file.
+    programmatically rather than read in from a BUILD file.
 
     :param Address address: The address of the new Target.  Must not already be in the BuildGraph.
     :param type target_type: The class of the Target to be constructed.

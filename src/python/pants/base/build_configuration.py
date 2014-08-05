@@ -90,13 +90,13 @@ class BuildConfiguration(object):
     """Registers a general Addressable type under the given alias.
 
     Addressables are the general mechanism for capturing the name and value of objects instantiated
-      in BUILD files.  Most notably, TargetAddressable is a subclass of Addressable, and
-      `register_target_alias` delegates to this method after noting the alias mapping for
-      other purposes.
+    in BUILD files.  Most notably, TargetAddressable is a subclass of Addressable, and
+    `register_target_alias` delegates to this method after noting the alias mapping for
+    other purposes.
 
     Any Addressable with the appropriate `addressable_name` implementation which is registered
-      here and instantiated in a BUILD file will be accessible from the AddressMapper, regardless
-      of the type of instance it yields.
+    here and instantiated in a BUILD file will be accessible from the AddressMapper, regardless
+    of the type of instance it yields.
     """
     if alias in self._addressable_alias_map:
       logger.warn('Addressable alias {alias} has already been registered.  Overwriting!'

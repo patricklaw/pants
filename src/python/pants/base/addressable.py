@@ -33,7 +33,7 @@ class AddressableCallProxy(object):
 
 
 class Addressable(AbstractClass):
-  """An ABC for classes which would like to be automatically named in BUILD files."""
+  """An ABC for classes which would like instances to be named and exported from BUILD files."""
 
   class AddressableInitError(Exception): pass
 
