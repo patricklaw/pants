@@ -12,7 +12,7 @@ import unittest2
 import pytest
 
 from pants.backend.core.targets.dependencies import Dependencies
-from pants.base.address_mapper import AddressMapper
+from pants.base.build_file_address_mapper import AddressLookupError
 from pants.base.addressable import Addressable
 
 from pants_test.base_test import BaseTest
@@ -35,7 +35,7 @@ class BuildFileAddressMapperTest(BaseTest):
       '''
     ))
 
-    with pytest.raises(AddressMapper.AddressLookupError):
+    with pytest.raises(AddressLookupError):
       self.address_mapper.resolve_spec('//:bad_spec')
 
     dependencies_addressable = self.address_mapper.resolve_spec('//:foozle')

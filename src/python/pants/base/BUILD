@@ -16,15 +16,6 @@ python_library(
 )
 
 python_library(
-  name = 'address_mapper',
-  sources = ['address_mapper.py'],
-  dependencies = [
-    pants('3rdparty/python/twitter/commons:twitter.common.lang'),
-    pants(':address'),
-  ]
-)
-
-python_library(
   name = 'addressable',
   sources = ['addressable.py'],
   dependencies = [
@@ -71,7 +62,6 @@ python_library(
   sources = ['build_file_address_mapper.py'],
   dependencies = [
     pants(':address'),
-    pants(':address_mapper'),
     pants(':build_file'),
     pants(':build_environment'),
   ]
