@@ -128,9 +128,11 @@ class Target(AbstractTarget):
     return (cls.LANG_DISCRIMINATORS[lang], is_other_lang)
 
   @classmethod
-  def get_addressable_type(cls):
+  def get_addressable_type(target_cls):
     class ConcreteTargetAddressable(TargetAddressable):
-      target_type = cls
+      @classmethod
+      def get_target_type(cls):
+        return target_cls
     return ConcreteTargetAddressable
 
   @property

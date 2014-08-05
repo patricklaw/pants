@@ -41,7 +41,10 @@ class BuildFileAddressMapper(object):
     return self.resolve(address)
 
   def address_map_from_spec_path(self, spec_path):
-    """Returns a resolution map of all addresses in a "directory" in the virtual address space."""
+    """Returns a resolution map of all addresses in a "directory" in the virtual address space.
+
+    :returns {Address: <resolved Object>}:
+    """
     if spec_path not in self._spec_path_to_address_map_map:
       address_map = self._build_file_parser.address_map_from_spec_path(spec_path)
       self._spec_path_to_address_map_map[spec_path] = address_map

@@ -12,25 +12,29 @@ from pants.base.exceptions import TargetDefinitionException
 
 
 class TargetAddressable(Addressable):
+  @classmethod
+  def get_target_type(cls):
+    raise NotImplemented
+
   @property
   def addressable_name(self):
     return self.name
 
   def __init__(self, *args, **kwargs):
-    target_type = self.target_type
+    self.target_type = self.get_target_type()
 
     if 'name' not in kwargs:
       raise Addressable.AddressableInitError(
         'name is a required parameter to all Targets specified within a BUILD file.'
         '  Target type was: {target_type}.'
-        .format(target_type=target_type))
+        .format(target_type=self.target_type))
 
     if args:
       raise Addressable.AddressableInitError(
         'All arguments passed to Targets within BUILD files must use explicit keyword syntax.'
         '  Target type was: {target_type}.'
         '  Arguments passed were: {args}'
-        .format(target_type=target_type, args=args))
+        .format(target_type=self.target_type, args=args))
 
     self.kwargs = kwargs
     self.name = kwargs['name']
@@ -41,7 +45,7 @@ class TargetAddressable(Addressable):
       if not isinstance(dep_spec, Compatibility.string):
         msg = ('dependencies passed to Target constructors must be strings.  {dep_spec} is not'
                ' a string.  Target type was: {target_type}.'
-               .format(target_type=target_type, dep_spec=dep_spec))
+               .format(target_type=self.target_type, dep_spec=dep_spec))
         raise TargetDefinitionException(target=self, msg=msg)
 
   def with_description(self, description):

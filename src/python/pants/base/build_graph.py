@@ -335,16 +335,16 @@ class BuildGraph(object):
     :param Address address:
     """
     try:
-      target = addressable.target_type(build_graph=self,
-                                       address=address,
-                                       **addressable.kwargs)
+      target = addressable.get_target_type()(build_graph=self,
+                                             address=address,
+                                             **addressable.kwargs)
       target.with_description(addressable.description)
       return target
     except Exception:
       traceback.print_exc()
       logger.exception('Failed to instantiate Target with type {target_type} with name "{name}"'
                        ' at address {address}'
-                       .format(target_type=addressable.target_type,
+                       .format(target_type=addressable.get_target_type(),
                                name=addressable.name,
                                address=address))
       raise

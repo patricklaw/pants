@@ -11,6 +11,8 @@ from pants.base.address import BuildFileAddress
 
 
 class AddressableCallProxy(object):
+  """A registration proxy for objects to be captured and addressed from BUILD files."""
+
   def __init__(self, addressable_type, build_file, registration_callback):
     self._addressable_type = addressable_type
     self._build_file = build_file
@@ -31,9 +33,17 @@ class AddressableCallProxy(object):
 
 
 class Addressable(AbstractClass):
+  """An ABC for classes which would like to be automatically named in BUILD files."""
+
   class AddressableInitError(Exception): pass
 
   @property
   def addressable_name(self):
+    """This property is inspected by AddressableCallProxy to automatically name Addressables.
+
+    Generally, a subclass will inspect its captured arguments and return, for example, the
+      captured `name` parameter.  A value of `None` (the default) causes AddressableCallProxy
+      to skip capturing and naming this instance.
+    """
     return None
 
