@@ -65,9 +65,9 @@ class BuildConfiguration(object):
       raise TypeError('Only Target types can be registered via `register_target_alias`, '
                       'given {0}'.format(target))
 
-    if alias in self._target_aliases:
-      logger.warn('Target alias {alias} has already been registered.  Overwriting!'
-                  .format(alias=alias))
+    # if alias in self._target_aliases:
+    #   logger.warn('Target alias {alias} has already been registered.  Overwriting!'
+    #               .format(alias=alias))
     self._target_aliases[alias] = target
     self.register_addressable_alias(alias, target.get_addressable_type())
 
@@ -98,9 +98,9 @@ class BuildConfiguration(object):
     here and instantiated in a BUILD file will be accessible from the AddressMapper, regardless
     of the type of instance it yields.
     """
-    if alias in self._addressable_alias_map:
-      logger.warn('Addressable alias {alias} has already been registered.  Overwriting!'
-                  .format(alias=alias))
+    # if alias in self._addressable_alias_map:
+    #   logger.warn('Addressable alias {alias} has already been registered.  Overwriting!'
+    #               .format(alias=alias))
     self._addressable_alias_map[alias] = addressable_type
 
   def register_exposed_context_aware_object_factory(self, alias, context_aware_object_factory):
