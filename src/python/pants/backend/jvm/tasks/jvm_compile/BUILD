@@ -7,12 +7,11 @@ python_library(
     ':analysis',
     ':analysis_parser',
     ':analysis_tools',
+    ':anonymizer',
     ':java',
     ':jvm_compile',
-    ':anonymizer',
     ':jvm_dependency_analyzer',
     ':scala',
-    ':anonymize_zinc_analysis',
   ],
 )
 
@@ -85,7 +84,6 @@ python_library(
 python_library(
   name = 'anonymizer',
   sources = ['anonymizer.py'],
-  dependencies = []
 )
 
 python_library(
