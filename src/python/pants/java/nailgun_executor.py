@@ -241,6 +241,11 @@ class NailgunExecutor(Executor):
           nailgun = self._create_ngclient(port, stdout, stderr)
           log.debug('Detected ng server up on port %d' % port)
         elif time.time() - port_parse_start > nailgun_timeout_seconds:
+          log.error('Timeout while trying to await the nailgun server.')
+          with safe_open(self._ng_out, 'r') as f:
+            log.error('*' * 20 + 'nailgun stdout was:\n{0}'.format(f.read()))
+          with safe_open(self._ng_err, 'r') as f:
+            log.error('*' * 20 + 'nailgun stderr was:\n{0}'.format(f.read()))
           raise NailgunClient.NailgunError('Failed to read ng output after'
                                            ' %s seconds' % nailgun_timeout_seconds)
 
