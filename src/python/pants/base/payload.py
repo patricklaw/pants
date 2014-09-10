@@ -15,14 +15,71 @@ from twitter.common.lang import AbstractClass
 from pants.base.build_environment import get_buildroot
 from pants.base.validation import assert_list
 
-def hash_sources(root_path, rel_path, sources):
-  hasher = sha1()
-  hasher.update(rel_path)
-  for source in sorted(sources):
-    with open(os.path.join(root_path, rel_path, source), 'rb') as f:
-      hasher.update(source)
-      hasher.update(f.read())
-  return hasher.hexdigest()
+
+class PayloadField(AbstractClass):
+  _invalidation_hash_memo = None
+  def invalidation_hash(self):
+    if self._invalidation_hash_memo is None:
+      self._invalidation_hash_memo = self.compute_invalidation_hash()
+    return self._invalidation_hash_memo
+
+  @abstractmethod
+  def compute_invalidation_hash(self):
+    pass
+
+
+class SourcesField(PayloadField):
+  def __init__(self, sources_rel_path, sources):
+    self.sources_rel_path = sources_rel_path
+    self.sources = assert_list(sources)
+
+  @property
+  def num_chunking_units(self):
+    return len(self.sources)
+
+  def has_sources(self, extension=''):
+    return any(source.endswith(extension) for source in self.sources)
+
+  def sources_relative_to_buildroot(self):
+    return [os.path.join(self.sources_rel_path, source) for source in self.sources]
+
+  def compute_invalidation_hash(self):
+    hasher = sha1()
+    hasher.update(self.sources_rel_path)
+    for source in sorted(self.sources):
+      with open(os.path.join(get_buildroot(), rel_path, source), 'rb') as f:
+        hasher.update(source)
+        hasher.update(f.read())
+    return hasher.hexdigest()
+
+
+class Payload(object):
+  def __init__(self, **initial_fields):
+    self._fields = {}
+
+  def add_field(self, key, field):
+    if key in self._fields:
+      raise PayloadFieldAlreadyDefined(
+        'Key {key} is already set on this payload.'
+        ' The existing field was {existing_field}.'
+        ' Tried to set new field {field}.'
+        .format(key=key, existing_field=self._fields[key], field=field))
+    else:
+      self._fields[key] = field
+
+  _invalidation_hash_memo = None
+  def invalidation_hash(self):
+    if self._invalidation_hash_memo is None:
+      self._invalidation_hash_memo = self.compute_invalidation_hash()
+    return self._invalidation_hash_memo
+
+  def compute_invalidation_hash(self):
+    hasher = sha1()
+    for key in sorted(self._fields.keys()):
+      field = self._fields[key]
+      hasher.update(key)
+      hasher.update(field.invalidation_hash())
+    return hasher.hexdigest()
 
 
 def hash_bundle(bundle):
@@ -36,48 +93,6 @@ def hash_bundle(bundle):
     with open(abs_path, 'rb') as f:
       hasher.update(f.read())
   return hasher.hexdigest()
-
-
-class Payload(AbstractClass):
-  @property
-  def num_chunking_units(self):
-    return 1
-
-  @abstractmethod
-  def invalidation_hash(self):
-    pass
-
-  @abstractmethod
-  def has_sources(self, extension):
-    pass
-
-
-class SourcesPayload(Payload):
-  def __init__(self, sources_rel_path, sources):
-    self.sources_rel_path = sources_rel_path
-    self.sources = assert_list(sources)
-    self.excludes = OrderedSet()
-
-  @property
-  def num_chunking_units(self):
-    return len(self.sources)
-
-  def has_sources(self, extension=''):
-    return any(source.endswith(extension) for source in self.sources)
-
-  def sources_relative_to_buildroot(self):
-    return [os.path.join(self.sources_rel_path, source) for source in self.sources]
-
-
-class EmptyPayload(Payload):
-  def __init__(self):
-    pass
-
-  def invalidation_hash(self):
-    return 'EmptyPayloadHash'
-
-  def has_sources(self, extension):
-    return False
 
 
 class BundlePayload(Payload):
