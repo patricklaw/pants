@@ -18,7 +18,7 @@ import httplib
 
 from pants.base.config import Config
 from pants.base.run_info import RunInfo
-from pants.base.worker_pool import WorkerPool
+from pants.base.worker_pool import create_multiproc_pool, WorkerPool
 from pants.base.workunit import WorkUnit
 from pants.goal.aggregated_timings import AggregatedTimings
 from pants.goal.artifact_cache_stats import ArtifactCacheStats
@@ -124,6 +124,9 @@ class RunTracker(object):
     # For background work.  Created lazily if needed.
     self._background_worker_pool = None
     self._background_root_workunit = None
+
+    self.foreground_subproc_pool = create_multiproc_pool(num_foreground_workers)
+    self.background_subproc_pool = create_multiproc_pool(num_background_workers)
 
     self._aborted = False
 
@@ -251,23 +254,37 @@ class RunTracker(object):
 
     Note: If end() has been called once, subsequent calls are no-ops.
     """
-    if self._background_worker_pool:
-      if self._aborted:
-        self.log(Report.INFO, "Aborting background workers.")
-        self._background_worker_pool.abort()
-      else:
-        self.log(Report.INFO, "Waiting for background workers to finish.")
-        self._background_worker_pool.shutdown()
-      self.report.end_workunit(self._background_root_workunit)
-      self._background_root_workunit.end()
-
-    if self._foreground_worker_pool:
-      if self._aborted:
+    if self._aborted:
+      if self._foreground_worker_pool:
         self.log(Report.INFO, "Aborting foreground workers.")
         self._foreground_worker_pool.abort()
-      else:
+
+      if self._background_worker_pool:
+        self.log(Report.INFO, "Aborting background workers.")
+        self._background_worker_pool.abort()
+
+      self.foreground_subproc_pool.close()
+      self.background_subproc_pool.close()
+      self.foreground_subproc_pool.terminate()
+      self.background_subproc_pool.terminate()
+
+    else:
+      if self._foreground_worker_pool:
         self.log(Report.INFO, "Waiting for foreground workers to finish.")
         self._foreground_worker_pool.shutdown()
+
+      if self._background_worker_pool:
+        self.log(Report.INFO, "Waiting for background workers to finish.")
+        self._background_worker_pool.shutdown()
+
+      self.foreground_subproc_pool.close()
+      self.background_subproc_pool.close()
+      self.foreground_subproc_pool.join()
+      self.background_subproc_pool.join()
+
+    if self._background_worker_pool:
+      self.report.end_workunit(self._background_root_workunit)
+      self._background_root_workunit.end()
 
     self.report.end_workunit(self._main_root_workunit)
     self._main_root_workunit.end()
