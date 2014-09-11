@@ -45,7 +45,7 @@ def create_artifact_cache(log, artifact_root, spec, task_name, compression, acti
     if spec.startswith('/') or spec.startswith('~'):
       path = os.path.join(spec, task_name)
       log.info('%s %s local artifact cache at %s' % (task_name, action, path))
-      return LocalArtifactCache(log, artifact_root, path, compression)
+      return LocalArtifactCache(artifact_root, path, compression)
     elif spec.startswith('http://') or spec.startswith('https://'):
       # Caches are supposed to be close, and we don't want to waste time pinging on no-op builds.
       # So we ping twice with a short timeout.
@@ -54,7 +54,7 @@ def create_artifact_cache(log, artifact_root, spec, task_name, compression, acti
       if best_url:
         url = best_url.rstrip('/') + '/' + task_name
         log.info('%s %s remote artifact cache at %s' % (task_name, action, url))
-        return RESTfulArtifactCache(log, artifact_root, url, compression)
+        return RESTfulArtifactCache(artifact_root, url)
       else:
         log.warn('%s has no reachable artifact cache in %s.' % (task_name, spec))
         return None
