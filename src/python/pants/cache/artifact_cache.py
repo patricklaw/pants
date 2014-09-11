@@ -5,13 +5,14 @@
 from __future__ import (nested_scopes, generators, division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
+import logging
 import os
-
 
 # Note throughout the distinction between the artifact_root (which is where the artifacts are
 # originally built and where the cache restores them to) and the cache root path/URL (which is
 # where the artifacts are cached).
 
+logger = logging.getLogger(__name__)
 
 class ArtifactCache(object):
   """A map from cache key to a set of build artifacts.
@@ -26,12 +27,11 @@ class ArtifactCache(object):
     """Indicates a problem writing to or reading from the cache."""
     pass
 
-  def __init__(self, log, artifact_root):
+  def __init__(self, artifact_root):
     """Create an ArtifactCache.
 
     All artifacts must be under artifact_root.
     """
-    self.log = log
     self.artifact_root = artifact_root
 
   def insert(self, cache_key, paths):
@@ -51,7 +51,7 @@ class ArtifactCache(object):
         raise ArtifactCache.CacheError('Tried to cache nonexistent files: %s' % missing_files)
       self.try_insert(cache_key, paths)
     except Exception as e:
-      self.log.error('Error while writing to artifact cache: %s. ' % e)
+      logger.error('Error while writing to artifact cache: %s. ' % e)
 
   def try_insert(self, cache_key, paths):
     """Attempt to cache the output of a build, without error-handling.

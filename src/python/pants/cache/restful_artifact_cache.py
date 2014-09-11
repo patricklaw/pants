@@ -15,19 +15,20 @@ from pants.cache.artifact import TarballArtifact
 from pants.cache.artifact_cache import ArtifactCache
 from pants.util.contextutil import temporary_file, temporary_file_path
 
+logger = logging.getLogger(__name__)
 
 class RESTfulArtifactCache(ArtifactCache):
   """An artifact cache that stores the artifacts on a RESTful service."""
 
   READ_SIZE_BYTES = 4 * 1024 * 1024
 
-  def __init__(self, log, artifact_root, url_base, compress=True):
+  def __init__(self, artifact_root, url_base, compress=True):
     """
     url_base: The prefix for urls on some RESTful service. We must be able to PUT and GET to any
               path under this base.
     compress: Whether to compress the artifacts before storing them.
     """
-    ArtifactCache.__init__(self, log, artifact_root)
+    ArtifactCache.__init__(self, artifact_root)
     parsed_url = urlparse.urlparse(url_base)
     if parsed_url.scheme == 'http':
       self._ssl = False
@@ -87,7 +88,7 @@ class RESTfulArtifactCache(ArtifactCache):
         artifact.extract()
         return artifact
     except Exception as e:
-      self.log.warn('Error while reading from remote artifact cache: %s' % e)
+      logger.warn('\nError while reading from remote artifact cache: %s\n' % e)
       return None
 
   def delete(self, cache_key):
@@ -108,7 +109,7 @@ class RESTfulArtifactCache(ArtifactCache):
   # Returns a response if we get a 200, None if we get a 404 and raises an exception otherwise.
   def _request(self, method, path, body=None):
     url = self._url_string(path)
-    self.log.debug('Sending %s request to %s' % (method, url))
+    logger.debug('Sending %s request to %s' % (method, url))
 
     try:
       response = None
@@ -127,7 +128,7 @@ class RESTfulArtifactCache(ArtifactCache):
       if int(response.status_code / 100) == 2:
         return response
       elif response.status_code == 404:
-        self.log.debug('404 returned for %s request to %s' % (method, self._url_string(path)))
+        logger.debug('404 returned for %s request to %s' % (method, self._url_string(path)))
         return None
       else:
         raise self.CacheError('Failed to %s %s. Error: %d %s' % (method, self._url_string(path),
