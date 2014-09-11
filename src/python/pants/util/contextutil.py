@@ -79,7 +79,7 @@ def temporary_file_path(root_dir=None, cleanup=True):
 
 
 @contextmanager
-def temporary_file(root_dir=None, cleanup=True):
+def temporary_file(root_dir=None, cleanup=True, suffix=''):
   """
     A with-context that creates a temporary file and returns a writeable file descriptor to it.
 
@@ -87,7 +87,7 @@ def temporary_file(root_dir=None, cleanup=True):
       root_dir [path]: The parent directory to create the temporary file.
       cleanup [True/False]: Whether or not to clean up the temporary file.
   """
-  with tempfile.NamedTemporaryFile(dir=root_dir, delete=False) as fd:
+  with tempfile.NamedTemporaryFile(suffix=suffix, dir=root_dir, delete=False) as fd:
     try:
       yield fd
     finally:

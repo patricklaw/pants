@@ -7,19 +7,20 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 
 import SimpleHTTPServer
 import SocketServer
+import logging
 import os
 import unittest2 as unittest
 from threading import Thread
 
 from pants.base.build_invalidator import CacheKey
 from pants.cache.cache_setup import create_artifact_cache, select_best_url
-from pants.cache.combined_artifact_cache import CombinedArtifactCache
 from pants.cache.local_artifact_cache import LocalArtifactCache
 from pants.cache.restful_artifact_cache import RESTfulArtifactCache
 from pants.util.contextutil import pushd, temporary_dir, temporary_file
 from pants.util.dirutil import safe_mkdir
 from pants_test.testutils.mock_logger import MockLogger
 
+logging.basicConfig()
 
 class MockPinger(object):
   def __init__(self, hosts_to_times):
@@ -80,7 +81,7 @@ class TestArtifactCache(unittest.TestCase):
       cachedir = os.path.join(tmpdir, 'cachedir')  # Must be a real path, so we can safe_mkdir it.
       check(LocalArtifactCache, cachedir)
       check(RESTfulArtifactCache, 'http://localhost/bar')
-      check(CombinedArtifactCache, [cachedir, 'http://localhost/bar'])
+      check(RESTfulArtifactCache, [cachedir, 'http://localhost/bar'])
 
 
   def test_local_cache(self):
@@ -104,8 +105,7 @@ class TestArtifactCache(unittest.TestCase):
           httpd_thread = Thread(target=httpd.serve_forever)
           httpd_thread.start()
           with temporary_dir() as artifact_root:
-            artifact_cache = RESTfulArtifactCache(artifact_root,
-                                                  'http://localhost:%d' % port)
+            artifact_cache = RESTfulArtifactCache(artifact_root, 'http://localhost:%d' % port)
             self.do_test_artifact_cache(artifact_cache)
     finally:
       if httpd:
@@ -125,7 +125,8 @@ class TestArtifactCache(unittest.TestCase):
       # Cache it.
       self.assertFalse(artifact_cache.has(key))
       self.assertFalse(self.cache_use_files_finds_key(artifact_cache, key))
-      artifact_cache.insert(key, [path])
+      print("#"*80)
+      self.assertTrue(bool(artifact_cache.insert(key, [path])))
       self.assertTrue(artifact_cache.has(key))
 
       # Stomp it.
@@ -144,7 +145,7 @@ class TestArtifactCache(unittest.TestCase):
       artifact_cache.delete(key)
       self.assertFalse(artifact_cache.has(key))
 
-  def test_combined_cache(self):
+  def test_local_backed_remote_cache(self):
     """make sure that the combined cache finds what it should and that it backfills"""
     httpd = None
     httpd_thread = None
@@ -157,11 +158,12 @@ class TestArtifactCache(unittest.TestCase):
             httpd_thread = Thread(target=httpd.serve_forever)
             httpd_thread.start()
             with temporary_dir() as artifact_root:
-              local = LocalArtifactCache(None, artifact_root, cache_root)
-              remote = RESTfulArtifactCache(MockLogger(), artifact_root, 'http://localhost:%d' % port)
-              combined = CombinedArtifactCache([local, remote])
+              url = 'http://localhost:%d' % port
+              local = LocalArtifactCache(artifact_root, cache_root)
+              remote = RESTfulArtifactCache(artifact_root, url)
+              combined = RESTfulArtifactCache(artifact_root, url, local=local)
 
-              key = CacheKey('muppet_key', 'fake_hash', 42, [])
+              key = CacheKey('muppet_key', 'fake_hash', 42)
 
               with temporary_file(artifact_root) as f:
                 # Write the file.
@@ -174,7 +176,7 @@ class TestArtifactCache(unittest.TestCase):
                 self.assertFalse(remote.has(key))
                 self.assertFalse(combined.has(key))
 
-                # No cache returns key
+                # No cache returns files for key
                 self.assertFalse(self.cache_use_files_finds_key(local, key))
                 self.assertFalse(self.cache_use_files_finds_key(remote, key))
                 self.assertFalse(self.cache_use_files_finds_key(combined, key))
@@ -187,15 +189,16 @@ class TestArtifactCache(unittest.TestCase):
                 # Add to only remote cache
                 remote.insert(key, [path])
 
+                # After insertion to remote, remote and only remote should have key
                 self.assertFalse(local.has(key))
                 self.assertTrue(remote.has(key))
                 self.assertTrue(combined.has(key))
 
-                # Successfully using via remote should NOT change local
+                # Successfully using via the remote cache should NOT change local
                 self.assertTrue(self.cache_use_files_finds_key(remote, key))
                 self.assertFalse(local.has(key))
 
-                # Successfully using via combined SHOULD backfill local
+                # Successfully using via the combined cache backfills local
                 self.assertTrue(self.cache_use_files_finds_key(combined, key))
                 self.assertTrue(local.has(key))
                 self.assertTrue(self.cache_use_files_finds_key(local, key))
