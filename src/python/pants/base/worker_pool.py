@@ -6,10 +6,22 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
                         print_function, unicode_literals)
 
 import threading
+import multiprocessing
 from multiprocessing.pool import ThreadPool
+import signal
+import sys
 
 from pants.reporting.report import Report
 
+
+def exit_now(*args):
+  sys.exit()
+
+def exit_on_sigint():
+  signal.signal(signal.SIGINT, exit_now)
+
+def create_multiproc_pool(size=None):
+  return multiprocessing.Pool(size, initializer=exit_on_sigint)
 
 class Work(object):
   """Represents multiple concurrent calls to the same callable."""

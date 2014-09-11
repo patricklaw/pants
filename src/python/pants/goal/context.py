@@ -25,7 +25,6 @@ from pants.goal.workspace import ScmWorkspace
 from pants.java.distribution.distribution import Distribution
 from pants.reporting.report import Report
 
-
 # Override with ivy -> cache_dir
 _IVY_CACHE_DIR_DEFAULT=os.path.expanduser('~/.ivy2/pants')
 
@@ -212,6 +211,18 @@ class Context(object):
   def background_worker_pool(self):
     """Returns the pool to which tasks can submit background work."""
     return self.run_tracker.background_worker_pool()
+
+  def subproc_map(self, f, items):
+    try:
+      # TODO(davidt): use apply_async, add reporting callback
+      return self.run_tracker.foreground_subproc_pool.map(f, items)
+    except KeyboardInterrupt:
+      self.context.subproc_pool.terminate()
+      raise
+
+  def subproc_background_map(self, f, items):
+    # TODO(davidt): use apply_async, add reporting callback
+    return self.run_tracker.background_subproc_pool.map_async(f, items)
 
   @contextmanager
   def new_workunit(self, name, labels=None, cmd=''):
