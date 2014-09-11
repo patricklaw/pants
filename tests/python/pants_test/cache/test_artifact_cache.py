@@ -86,7 +86,7 @@ class TestArtifactCache(unittest.TestCase):
   def test_local_cache(self):
     with temporary_dir() as artifact_root:
       with temporary_dir() as cache_root:
-        artifact_cache = LocalArtifactCache(None, artifact_root, cache_root)
+        artifact_cache = LocalArtifactCache(artifact_root, cache_root)
         self.do_test_artifact_cache(artifact_cache)
 
 
@@ -101,7 +101,7 @@ class TestArtifactCache(unittest.TestCase):
           httpd_thread = Thread(target=httpd.serve_forever)
           httpd_thread.start()
           with temporary_dir() as artifact_root:
-            artifact_cache = RESTfulArtifactCache(MockLogger(), artifact_root,
+            artifact_cache = RESTfulArtifactCache(artifact_root,
                                                   'http://localhost:%d' % port)
             self.do_test_artifact_cache(artifact_cache)
     finally:
@@ -112,7 +112,7 @@ class TestArtifactCache(unittest.TestCase):
 
 
   def do_test_artifact_cache(self, artifact_cache):
-    key = CacheKey('muppet_key', 'fake_hash', 42, [])
+    key = CacheKey('muppet_key', 'fake_hash', 42)
     with temporary_file(artifact_cache.artifact_root) as f:
       # Write the file.
       f.write(TEST_CONTENT1)
