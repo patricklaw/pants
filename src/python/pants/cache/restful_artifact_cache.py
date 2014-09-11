@@ -17,6 +17,10 @@ from pants.util.contextutil import temporary_file, temporary_file_path
 
 logger = logging.getLogger(__name__)
 
+# Reduce the somewhat verbose logging of requests.
+# TODO do this in a central place
+logging.getLogger('requests').setLevel(logging.WARNING)
+
 class RESTfulArtifactCache(ArtifactCache):
   """An artifact cache that stores the artifacts on a RESTful service."""
 
@@ -45,9 +49,7 @@ class RESTfulArtifactCache(ArtifactCache):
     # TODO: re-evaluate session's life-cycle if/when a longer-lived pants process exists
     self.session = requests.Session()
 
-    # Reduce the somewhat verbose logging of requests.
-    # TODO do this in a central place
-    logging.getLogger('requests').setLevel(logging.WARNING)
+
 
 
   def try_insert(self, cache_key, paths):
