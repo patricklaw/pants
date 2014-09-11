@@ -7,6 +7,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 
 import logging
 import os
+import sys
 
 # Note throughout the distinction between the artifact_root (which is where the artifacts are
 # originally built and where the cache restores them to) and the cache root path/URL (which is
@@ -82,3 +83,8 @@ class ArtifactCache(object):
     Deleting non-existent artifacts is a no-op.
     """
     pass
+
+def call_use_cached_files(tup):
+  res = tup[0].use_cached_files(tup[1])
+  sys.stderr.write('.')
+  return bool(res)
