@@ -19,11 +19,10 @@ class CombinedArtifactCache(ArtifactCache):
     """
     if not artifact_caches:
       raise ValueError('Must provide at least one underlying artifact cache')
-    log = artifact_caches[0].log
     artifact_root = artifact_caches[0].artifact_root
     if any(x.artifact_root != artifact_root for x in artifact_caches):
       raise ValueError('Combined artifact caches must all have the same artifact root.')
-    ArtifactCache.__init__(self, log, artifact_root)
+    ArtifactCache.__init__(self, artifact_root)
     self._artifact_caches = artifact_caches
     self._backfill = backfill
 

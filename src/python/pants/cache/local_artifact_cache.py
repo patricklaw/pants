@@ -5,6 +5,7 @@
 from __future__ import (nested_scopes, generators, division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
+import logging
 import os
 import shutil
 import uuid
@@ -13,25 +14,18 @@ from pants.cache.artifact import TarballArtifact
 from pants.cache.artifact_cache import ArtifactCache
 from pants.util.dirutil import safe_delete, safe_mkdir, safe_mkdir_for
 
+logger = logging.getLogger(__name__)
 
 class LocalArtifactCache(ArtifactCache):
   """An artifact cache that stores the artifacts in local files."""
-  def __init__(self, log, artifact_root, cache_root, compress=True, copy_fn=None):
+  def __init__(self, artifact_root, cache_root, compress=True):
     """
     cache_root: The locally cached files are stored under this directory.
-    copy_fn: An optional function with the signature copy_fn(absolute_src_path, relative_dst_path) that
-        will copy cached files into the desired destination. If unspecified, a simple file copy is used.
     """
-    ArtifactCache.__init__(self, log, artifact_root)
+    ArtifactCache.__init__(self, artifact_root)
     self._cache_root = os.path.expanduser(cache_root)
     self._compress = compress
 
-    def copy(src, rel_dst):
-      dst = os.path.join(self.artifact_root, rel_dst)
-      safe_mkdir_for(dst)
-      shutil.copy(src, dst)
-
-    self._copy_fn = copy_fn or copy
     safe_mkdir(self._cache_root)
 
   def try_insert(self, cache_key, paths):
@@ -66,7 +60,7 @@ class LocalArtifactCache(ArtifactCache):
       else:
         return None
     except Exception as e:
-      self.log.warn('Error while reading from local artifact cache: %s' % e)
+      logger.warn('Error while reading from local artifact cache: %s' % e)
       return None
 
   def delete(self, cache_key):
