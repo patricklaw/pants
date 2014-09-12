@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 # TODO do this in a central place
 logging.getLogger('requests').setLevel(logging.WARNING)
 
+class RequestsSession(object):
+  _session = None
+  @classmethod
+  def instance(cls):
+    if cls._session is None:
+      cls._session = requests.Session()
+    return cls._session
+
 class RESTfulArtifactCache(ArtifactCache):
   """An artifact cache that stores the artifacts on a RESTful service."""
 
@@ -52,10 +60,6 @@ class RESTfulArtifactCache(ArtifactCache):
 
     if self.compress != self._localcache.compress:
       raise ValueError('RESTfulArtifactCache and Local cache must use same compression settings')
-
-    # to enable connection reuse, all requests must be created from same session.
-    # TODO: re-evaluate session's life-cycle if/when a longer-lived pants process exists
-    self.session = requests.Session()
 
   def try_insert(self, cache_key, paths):
     # Delegate creation of artifact to local cache
@@ -109,16 +113,18 @@ class RESTfulArtifactCache(ArtifactCache):
     url = self._url_string(path)
     logger.debug('Sending %s request to %s' % (method, url))
 
+    session = RequestsSession.instance()
+
     try:
       response = None
       if 'PUT' == method:
-        response = self.session.put(url, data=body, timeout=self._timeout_secs)
+        response = session.put(url, data=body, timeout=self._timeout_secs)
       elif 'GET' == method:
-        response = self.session.get(url, timeout=self._timeout_secs, stream=True)
+        response = session.get(url, timeout=self._timeout_secs, stream=True)
       elif 'HEAD' == method:
-        response = self.session.head(url, timeout=self._timeout_secs)
+        response = session.head(url, timeout=self._timeout_secs)
       elif 'DELETE' == method:
-        response = self.session.delete(url, timeout=self._timeout_secs)
+        response = session.delete(url, timeout=self._timeout_secs)
       else:
         raise ValueError('Unknown request method %s' % method)
 
