@@ -92,3 +92,8 @@ def call_use_cached_files(tup):
   res = tup[0].use_cached_files(tup[1])
   sys.stderr.write('.')
   return bool(res)
+
+def call_insert(cache, key, files):
+  res = cache.insert(key, files)
+  return res
+
