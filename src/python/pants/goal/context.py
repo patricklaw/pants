@@ -220,9 +220,16 @@ class Context(object):
       self.context.subproc_pool.terminate()
       raise
 
-  def subproc_background_map(self, f, items):
-    # TODO(davidt): use apply_async, add reporting callback
-    return self.run_tracker.background_subproc_pool.map_async(f, items)
+  def background_proc(self, f, args):
+    """Send work to a subprocess and block on it
+
+       This is useful for dropping into into existing Work done on a ThreadPool
+       as it gets around the GIL without needing more reporting/accounting.
+    """
+    try:
+      return self.run_tracker.background_subproc_pool.apply_async(f, args).get(1000)
+    except multiprocessing.TimeoutError:
+      return None
 
   @contextmanager
   def new_workunit(self, name, labels=None, cmd=''):
