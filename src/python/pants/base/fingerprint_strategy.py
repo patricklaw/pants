@@ -6,6 +6,8 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
                         print_function, unicode_literals)
 
 from abc import abstractmethod
+from hashlib import sha1
+
 from twitter.common.lang import AbstractClass
 
 
@@ -22,13 +24,22 @@ class FingerprintStrategy(AbstractClass):
     raise NotImplemented
 
   @abstractmethod
-  def compute_fingerprint(self, target):
+  def compute_fingerprint(self, target, transitive=False):
     """Subclasses override this method to actually compute the Task specific fingerprint."""
 
-  def fingerprint_target(self, target):
+  def __init__(self, fingerprint_cache=None):
+    self._fingerprint_cache = fingerprint_cache or {}
+
+  def fingerprint_target(self, target, transitive=False):
     """Consumers of subclass instances call this to get a fingerprint labeled with the name"""
-    return '{fingerprint}-{name}'.format(fingerprint=self.compute_fingerprint(target),
-                                         name=self.name())
+    if (target, transitive) not in self._fingerprint_cache:
+      fingerprint = self.compute_fingerprint(target,
+                                             transitive=transitive,
+                                             fingerprint_cache=fingerprint_cache)
+      formatted_fingerprint = '{fingerprint}-{name}'.format(fingerprint=fingerprint,
+                                                            name=self.name())
+      fingerprint_cache[(target, transitive)] = formatted_fingerprint
+    return self._fingerprint_cache[(target, transitive)]
 
 
 class DefaultFingerprintStrategy(FingerprintStrategy):
@@ -38,5 +49,27 @@ class DefaultFingerprintStrategy(FingerprintStrategy):
   def name(cls):
     return 'default'
 
-  def compute_fingerprint(self, target):
-    return target.payload.invalidation_hash()
+  def compute_fingerprint(self, target, transitive=False):
+    target_hash = target.payload.invalidation_hash()
+    if target_hash is None and not transitive:
+      return None
+
+    if not transitive:
+      return target_hash
+    else:
+      dep_hasher = sha1()
+      def dep_hash_iter():
+        for dep in target.dependencies:
+          dep_hash = self.compute_fingerprint(dep, transitive=transitive)
+          if dep_hash is not None:
+            yield dep_hash
+      sorted_dep_hashes = sorted(dep_hash_iter())
+      if target_hash is None and not sorted_dep_hashes:
+        return None
+      for dep_hash in sorted_dep_hashes:
+        dep_hasher.update(dep_hash)
+
+      dependencies_hash = dep_hasher.hexdigest()[:12]
+      combined_hash = '{target_hash}.{deps_hash}'.format(target_hash=target_hash,
+                                                         deps_hash=dependencies_hash)
+      return combined_hash

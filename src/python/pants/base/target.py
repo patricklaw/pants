@@ -193,11 +193,9 @@ class Target(AbstractTarget):
     return self._tags
 
   def assert_list(self, maybe_list, expected_type=Compatibility.string):
-    return assert_list(maybe_list, expected_type, raise_type=lambda msg: TargetDefinitionException(self, msg))
-
-  def compute_invalidation_hash(self, fingerprint_strategy=None):
-    fingerprint_strategy = fingerprint_strategy or DefaultFingerprintStrategy()
-    return fingerprint_strategy.fingerprint_target(self)
+    return assert_list(maybe_list,
+                       expected_type,
+                       raise_type=lambda msg: TargetDefinitionException(self, msg))
 
   def invalidation_hash(self, fingerprint_strategy=None):
     fingerprint_strategy = fingerprint_strategy or DefaultFingerprintStrategy()
@@ -219,14 +217,22 @@ class Target(AbstractTarget):
     fp_name = fingerprint_strategy.name()
     if fp_name not in self._cached_transitive_fingerprint_map:
       hasher = sha1()
-      direct_deps = sorted(self.dependencies)
-      for dep in direct_deps:
-        hasher.update(dep.transitive_invalidation_hash(fingerprint_strategy))
+      def dep_hash_iter():
+        for dep in self.dependencies:
+          dep_hash = dep.transitive_invalidation_hash(fingerprint_strategy)
+          if dep_hash:
+            yield dep_hash
       target_hash = self.invalidation_hash(fingerprint_strategy)
+      dep_hashes = sorted(dep_hash_iter())
+      for dep_hash in dep_hashes:
+        hasher.update(dep_hash)
       dependencies_hash = hasher.hexdigest()[:12]
       combined_hash = '{target_hash}.{deps_hash}'.format(target_hash=target_hash,
                                                          deps_hash=dependencies_hash)
-      self._cached_transitive_fingerprint_map[fp_name] = combined_hash
+      if not target_hash:
+        self._cached_transitive_fingerprint_map[fp_name] = None
+      else:
+        self._cached_transitive_fingerprint_map[fp_name] = combined_hash
     return self._cached_transitive_fingerprint_map[fp_name]
 
   def mark_transitive_invalidation_hash_dirty(self):

@@ -37,14 +37,19 @@ class IvyResolveFingerprintStrategy(FingerprintStrategy):
     if isinstance(target, JarLibrary):
       return target.payload.invalidation_hash()
     elif isinstance(target, JvmTarget):
-      hasher = sha1()
-      for exclude in sorted(target.payload.excludes):
-        hasher.update(bytes(repr(exclude)))
-      for config in sorted(target.payload.configurations):
-        hasher.update(config)
-      return hasher.hexdigest()
+      if target.payload.excludes and target.payload.configurations:
+        hasher = sha1()
+        for exclude in sorted(target.payload.excludes):
+          hasher.update(bytes(repr(exclude)))
+        for config in sorted(target.payload.configurations):
+          hasher.update(config)
+        return hasher.hexdigest()
+      else:
+        # print("SKIPPED JVM {}".format(target))
+        return None
     else:
-      return sha1().hexdigest()
+      # print("SKIPPED {}".format(target))
+      return None
 
 
 class IvyTaskMixin(object):
@@ -78,7 +83,7 @@ class IvyTaskMixin(object):
     fingerprint_strategy = IvyResolveFingerprintStrategy()
 
     with self.invalidated(targets,
-                          invalidate_dependents=True,
+                          invalidate_dependents=False,
                           silent=silent,
                           fingerprint_strategy=fingerprint_strategy) as invalidation_check:
       global_vts = VersionedTargetSet.from_versioned_targets(invalidation_check.all_vts)
@@ -100,7 +105,7 @@ class IvyTaskMixin(object):
         def exec_ivy():
           ivy_utils.exec_ivy(
               target_workdir=target_workdir,
-              targets=targets,
+              targets=global_vts.targets,
               args=args,
               ivy=ivy,
               workunit_name='ivy',

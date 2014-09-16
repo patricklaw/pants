@@ -80,12 +80,12 @@ class CacheKeyGenerator(object):
     hasher = hashlib.sha1()
     hasher.update(self._cache_key_gen_version)
     key_suffix = hasher.hexdigest()[:12]
-    if transitive:
-      target_key = target.transitive_invalidation_hash(fingerprint_strategy)
+    target_key = fingerprint_strategy.fingerprint_target(target, transitive=transitive)
+    if target_key:
+      full_key = '{target_key}_{key_suffix}'.format(target_key=target_key, key_suffix=key_suffix)
+      return CacheKey(target.id, full_key, target.payload.num_chunking_units)
     else:
-      target_key = target.invalidation_hash(fingerprint_strategy)
-    full_key = '{target_key}_{key_suffix}'.format(target_key=target_key, key_suffix=key_suffix)
-    return CacheKey(target.id, full_key, target.payload.num_chunking_units)
+      return None
 
 
 # A persistent map from target set to cache key, which is a fingerprint of all

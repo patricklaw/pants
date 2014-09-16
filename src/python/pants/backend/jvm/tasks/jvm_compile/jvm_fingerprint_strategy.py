@@ -15,19 +15,22 @@ class JvmFingerprintStrategy(DefaultFingerprintStrategy):
   with the addition of a list of platform data entries. These can be used to hold
   things like java version."""
 
-  def __init__(self, platform_data=None):
+  def __init__(self, platform_data=None, **kwargs):
     """
     platform_data - List of platform information, such as java version.
     Order does not matter as it will be sorted.
     """
+    super(JvmFingerprintStrategy, self).__init__(**kwargs)
     self.platform_data = platform_data or []
 
   @classmethod
   def name(cls):
     return 'jvm'
 
-  def compute_fingerprint(self, target):
-    super_fingerprint = super(JvmFingerprintStrategy, self).compute_fingerprint(target)
+  def compute_fingerprint(self, target, transitive=False):
+    super_fingerprint = super(JvmFingerprintStrategy, self).compute_fingerprint(
+                                                              target,
+                                                              transitive=transitive)
 
     if not isinstance(target, JvmTarget):
       return super_fingerprint
