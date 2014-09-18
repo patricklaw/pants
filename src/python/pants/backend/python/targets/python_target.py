@@ -48,10 +48,16 @@ class PythonTarget(Target):
       format, e.g. ``'CPython>=3', or just ['>=2.7','<3']`` for requirements
       agnostic to interpreter class.
     """
-    payload = PythonPayload(sources_rel_path=address.spec_path,
-                            sources=sources or [],
-                            resources=resources)
-    super(PythonTarget, self).__init__(address=address, payload=payload, **kwargs)
+    sources_rel_path = sources_rel_path or address.spec_path
+    self.payload.add_fields({
+      'sources': SourcesField(sources=self.assert_list(sources),
+                              sources_rel_path=sources_rel_path),
+      'resources': SourcesField(sources=self.assert_list(resources),
+                                sources_rel_path=sources_rel_path),
+      'provides': provides,
+      'compatibility': GenericWrapperField(maybe_list(compatibility or ())),
+    })
+    super(PythonTarget, self).__init__(address=address, **kwargs)
     self._resource_target_specs = resource_targets
     self.add_labels('python')
 
@@ -64,9 +70,8 @@ class PythonTarget(Target):
 
     self._provides = provides
 
-    self._compatibility = maybe_list(compatibility or ())
     # Check that the compatibility requirements are well-formed.
-    for req in self._compatibility:
+    for req in self.payload.compatibility:
       try:
         PythonIdentity.parse_requirement(req)
       except ValueError as e:
@@ -81,19 +86,20 @@ class PythonTarget(Target):
 
   @property
   def provides(self):
-    if not self._provides:
-      return None
+    return self.payload.provides
 
-    # TODO(pl): This is an awful hack
-    for key, binary in self._provides._binaries.iteritems():
-      if isinstance(binary, Compatibility.string):
-        address = SyntheticAddress.parse(binary, relative_to=self.address.spec_path)
-        self._provides._binaries[key] = self._build_graph.get_target(address)
-    return self._provides
+  @property
+  def provided_binaries(self):
+    def binary_iter():
+      if self.payload.provides:
+        for key, spec in self.payload.provides.items():
+          address = SyntheticAddress.parse(binary, relative_to=self.address.spec_path)
+          yield (key, self._build_graph.get_target(address))
+    return dict(binary_iter())
 
   @property
   def compatibility(self):
-    return self._compatibility
+    return self.payload.compatibility
 
   @property
   def resources(self):

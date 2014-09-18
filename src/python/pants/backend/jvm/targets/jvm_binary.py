@@ -258,6 +258,7 @@ class JvmBinary(JvmTarget):
     if deploy_jar_rules and not isinstance(deploy_jar_rules, JarRules):
       raise TargetDefinitionException(self, 'deploy_jar_rules must be a JarRules specification')
 
+    # TODO(pl): These should all live in payload fields
     self.main = main
     self.basename = basename or name
     self.deploy_excludes = self.assert_list(deploy_excludes, expected_type=Exclude)

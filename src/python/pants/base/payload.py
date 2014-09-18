@@ -16,16 +16,34 @@ from pants.base.build_environment import get_buildroot
 from pants.base.validation import assert_list
 
 
+class PayloadFieldAlreadyDefinedError(Exception): pass
+class PayloadFrozenError(Exception): pass
+
+
 class PayloadField(AbstractClass):
-  _invalidation_hash_memo = None
-  def invalidation_hash(self):
-    if self._invalidation_hash_memo is None:
-      self._invalidation_hash_memo = self.compute_invalidation_hash()
-    return self._invalidation_hash_memo
+  _fingerprint_memo = None
+  def fingerprint(self):
+    if self._fingerprint_memo is None:
+      self._fingerprint_memo = self._compute_fingerprint()
+    return self._fingerprint_memo
 
   @abstractmethod
-  def compute_invalidation_hash(self):
+  def _compute_fingerprint(self):
     pass
+
+  def __hash__(self):
+    return hash(self.fingerprint())
+
+
+class GenericWrapperField(PayloadField):
+  def __init__(self, underlying):
+    self._underlying = underlying
+
+  def _compute_fingerprint(self):
+    return sha1(json.dumps(self._underlying,
+                           ensure_ascii=True,
+                           allow_nan=False,
+                           sort_keys=True)).hexdigest()
 
 
 class SourcesField(PayloadField):
@@ -43,7 +61,7 @@ class SourcesField(PayloadField):
   def sources_relative_to_buildroot(self):
     return [os.path.join(self.sources_rel_path, source) for source in self.sources]
 
-  def compute_invalidation_hash(self):
+  def _compute_fingerprint(self):
     hasher = sha1()
     hasher.update(self.sources_rel_path)
     for source in sorted(self.sources):
@@ -54,32 +72,43 @@ class SourcesField(PayloadField):
 
 
 class Payload(object):
-  def __init__(self, **initial_fields):
+  def __init__(self):
     self._fields = {}
+    self._frozen = False
+
+  def freeze(self):
+    self._frozen = True
 
   def add_field(self, key, field):
     if key in self._fields:
-      raise PayloadFieldAlreadyDefined(
+      raise PayloadFieldAlreadyDefinedError(
         'Key {key} is already set on this payload.'
         ' The existing field was {existing_field}.'
         ' Tried to set new field {field}.'
         .format(key=key, existing_field=self._fields[key], field=field))
+    elif self._frozen:
+      raise PayloadFrozenError('Payload is frozen, field with name {key} cannot be added to it.'
+                               .format(key=key))
     else:
       self._fields[key] = field
+      self._fingerprint_memo = None
 
-  _invalidation_hash_memo = None
-  def invalidation_hash(self):
-    if self._invalidation_hash_memo is None:
-      self._invalidation_hash_memo = self.compute_invalidation_hash()
-    return self._invalidation_hash_memo
+  _fingerprint_memo = None
+  def fingerprint(self):
+    if self._fingerprint_memo is None:
+      self._fingerprint_memo = self._compute_fingerprint()
+    return self._fingerprint_memo
 
-  def compute_invalidation_hash(self):
+  def _compute_fingerprint(self):
     hasher = sha1()
     for key in sorted(self._fields.keys()):
       field = self._fields[key]
       hasher.update(key)
-      hasher.update(field.invalidation_hash())
+      hasher.update(field.fingerprint())
     return hasher.hexdigest()
+
+  def __getattr__(self, attr):
+    return self._fields[attr]
 
 
 def hash_bundle(bundle):
@@ -95,20 +124,20 @@ def hash_bundle(bundle):
   return hasher.hexdigest()
 
 
-class BundlePayload(Payload):
+class BundleField(PayloadField):
   def __init__(self, bundles):
     self.bundles = bundles
 
-  def has_sources(self, extension):
-    return False
-
-  def invalidation_hash(self):
+  def _compute_fingerprint(self):
     hasher = sha1()
     bundle_hashes = [hash_bundle(bundle) for bundle in self.bundles]
     for bundle_hash in sorted(bundle_hashes):
       hasher.update(bundle_hash)
     return hasher.hexdigest()
 
+
+class ProvidesField(PayloadField):
+  def __init__(self, provides):
 
 class JvmTargetPayload(SourcesPayload):
   def __init__(self,
@@ -136,39 +165,6 @@ class JvmTargetPayload(SourcesPayload):
     for config in sorted(self.configurations):
       hasher.update(config)
     return hasher.hexdigest()
-
-
-class PythonPayload(SourcesPayload):
-  def __init__(self,
-               sources_rel_path=None,
-               sources=None,
-               resources=None,
-               requirements=None,
-               provides=None,
-               compatibility=None):
-    super(PythonPayload, self).__init__(sources_rel_path, sources)
-    self.resources = list(resources or [])
-    self.requirements = requirements
-    self.provides = provides
-    self.compatibility = compatibility
-
-  def invalidation_hash(self):
-    sources_hash = hash_sources(get_buildroot(), self.sources_rel_path, self.sources)
-    return sources_hash
-    # if self.provides:
-    #   hasher.update(bytes(hash(self.provides)))
-    # for resource in self.resources:
-    #   hasher.update(bytes(hash(resource)))
-    # for config in self.configurations:
-    #   hasher.update(config)
-
-
-class ResourcesPayload(SourcesPayload):
-  def __init__(self, sources_rel_path=None, sources=None):
-    super(ResourcesPayload, self).__init__(sources_rel_path, OrderedSet(sources))
-
-  def invalidation_hash(self):
-    return hash_sources(get_buildroot(), self.sources_rel_path, self.sources)
 
 
 class JarLibraryPayload(Payload):

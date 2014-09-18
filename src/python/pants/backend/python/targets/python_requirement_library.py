@@ -17,5 +17,8 @@ class PythonRequirementLibrary(Target):
     :param requirements: pip requirements
     :type requirements: List of :ref:`python_requirement <bdict_python_requirement>`\s
     """
+    self.payload.add_fields({
+      'requirements': requirements,                        
+    })
     payload = PythonRequirementLibraryPayload(requirements)
     super(PythonRequirementLibrary, self).__init__(*args, payload=payload, **kwargs)

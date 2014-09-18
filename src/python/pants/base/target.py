@@ -50,11 +50,6 @@ class AbstractTarget(object):
     return False
 
   @property
-  def is_thrift(self):
-    """Returns True if the target has thrift IDL sources."""
-    return False
-
-  @property
   def is_jvm(self):
     """Returns True if the target produces jvm bytecode."""
     return self.has_label('jvm')
@@ -98,11 +93,6 @@ class AbstractTarget(object):
   def is_test(self):
     """Returns True if the target is comprised of tests."""
     return self.has_label('tests')
-
-  @property
-  def is_android(self):
-    """Returns True if the target is an android target."""
-    return self.has_label('android')
 
 
 class Target(AbstractTarget):
@@ -167,10 +157,10 @@ class Target(AbstractTarget):
     ids = list(ids)  # We can't len a generator.
     return ids[0] if len(ids) == 1 else cls.combine_ids(ids)
 
-  def __init__(self, name, address, build_graph, payload=None, exclusives=None):
+  def __init__(self, name, address, build_graph, exclusives=None):
     """
     :param string name: The name of this target, which combined with this
-       build file defines the target address.
+      build file defines the target address.
     :param dependencies: Other targets that this target depends on.
     :type dependencies: list of target specs
     :param Address address: The Address that maps to this Target in the BuildGraph
@@ -179,9 +169,9 @@ class Target(AbstractTarget):
       See :ref:`howto_check_exclusives` for details.
     """
     # dependencies is listed above; implementation hides in TargetAddressable
+    self.payload.freeze()
     self.name = name
     self.address = address
-    self.payload = payload or EmptyPayload()
     self._build_graph = build_graph
     self.description = None
     self.labels = set()
@@ -193,6 +183,13 @@ class Target(AbstractTarget):
 
     self._cached_fingerprint_map = {}
     self._cached_transitive_fingerprint_map = {}
+
+  _payload = None
+  @property
+  def payload(self):
+    if self._payload is None:
+      self._payload = Payload()
+    return self._payload
 
   def assert_list(self, maybe_list, expected_type=Compatibility.string):
     return assert_list(maybe_list, expected_type, raise_type=lambda msg: TargetDefinitionException(self, msg))

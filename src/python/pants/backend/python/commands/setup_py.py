@@ -64,8 +64,8 @@ class SetupPy(Command):
   @classmethod
   def _combined_dependencies(cls, target):
     dependencies = OrderedSet(target.dependencies)
-    if isinstance(target, PythonTarget) and target.provides:
-      return dependencies | OrderedSet(target.provides.binaries.values())
+    if isinstance(target, PythonTarget):
+      return dependencies | OrderedSet(target.provided_binaries.values())
     else:
       return dependencies
 
@@ -136,7 +136,7 @@ class SetupPy(Command):
   @classmethod
   def iter_entry_points(cls, target):
     """Yields the name, entry_point pairs of binary targets in this PythonArtifact."""
-    for name, binary_target in target.provides.binaries.items():
+    for name, binary_target in target.provided_binaries.items():
       concrete_target = binary_target
       if not isinstance(concrete_target, PythonBinary) or concrete_target.entry_point is None:
         raise TargetDefinitionException(target,
@@ -409,7 +409,7 @@ class SetupPy(Command):
       def add_providing_target(target):
         if isinstance(target, PythonTarget) and target.provides:
           setup_targets.add(target)
-          return OrderedSet(target.provides.binaries.values())
+          return OrderedSet(target.provided_binaries.values())
       self.target.walk(add_providing_target)
     else:
       setup_targets = [self.target]

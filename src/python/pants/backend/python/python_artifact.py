@@ -8,7 +8,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 from pants.base.build_manual import manual
 
 
-class PythonArtifact(object):
+class PythonArtifact(PayloadField):
   """Represents a Python setup.py-based project."""
   class MissingArgument(Exception): pass
   class UnsupportedArgument(Exception): pass
@@ -60,6 +60,12 @@ class PythonArtifact(object):
   def binaries(self):
     return self._binaries
 
+  def _compute_fingerprint(self):
+    return json.dumps((self._kw, self._binaries),
+                      ensure_ascii=True,
+                      allow_nan=False,
+                      sort_keys=True)
+
   @manual.builddict()
   def with_binaries(self, *args, **kw):
     """Add binaries tagged to this artifact.
@@ -70,7 +76,7 @@ class PythonArtifact(object):
         name = 'my_library',
         zip_safe = True
       ).with_binaries(
-        my_command = pants(':my_library_bin')
+        my_command = ':my_library_bin'
       )
 
     This adds a console_script entry_point for the python_binary target
@@ -78,7 +84,7 @@ class PythonArtifact(object):
     python_binaries that specify entry_point explicitly instead of source.
 
     Also can take a dictionary, e.g.
-    with_binaries({'my-command': pants(...)})
+    with_binaries({'my-command': ':my_library_bin'})
     """
     for arg in args:
       if isinstance(arg, dict):
