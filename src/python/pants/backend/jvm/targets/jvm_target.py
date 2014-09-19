@@ -13,7 +13,6 @@ from pants.base.address import SyntheticAddress
 from pants.base.exceptions import TargetDefinitionException
 from pants.base.payload_field import (ConfigurationsField,
                                       ExcludesField,
-                                      ProvidesField,
                                       SourcesField)
 from pants.base.target import Target
 from pants.base.validation import assert_list
@@ -27,7 +26,6 @@ class JvmTarget(Target, Jarable):
   def __init__(self,
                address=None,
                sources=None,
-               sources_rel_path=None,
                provides=None,
                excludes=None,
                resources=None,
@@ -38,12 +36,10 @@ class JvmTarget(Target, Jarable):
       This parameter is not intended for general use.
     :type configurations: tuple of strings
     """
-
-    sources_rel_path = sources_rel_path or address.spec_path
     self.payload.add_fields({
       'sources': SourcesField(sources=self.assert_list(sources),
-                              sources_rel_path=sources_rel_path),
-      'provides': ProvidesField(provides),
+                              sources_rel_path=address.spec_path),
+      'provides': provides,
       'excludes': ExcludesField(self.assert_list(excludes, expected_type=Exclude)),
       'configurations': ConfigurationsField(self.assert_list(configurations)),
     })

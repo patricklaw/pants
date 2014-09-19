@@ -300,8 +300,10 @@ class SetupPy(Command):
         for relpath, abspath in self.iter_generated_sources(target, self._root, self._config):
           write_codegen_source(relpath, abspath)
       else:
-        for source in list(target.payload.sources) + list(target.payload.resources):
-          abs_source_path = os.path.join(get_buildroot(), target.payload.sources_rel_path, source)
+        sources_and_resources = (list(target.payload.sources.relative_to_buildroot()) + 
+                                 list(target.payload.resources.relative_to_buildroot()))
+        for rel_source in sources_and_resources:
+          abs_source_path = os.path.join(get_buildroot(), rel_source)
           abs_source_root_path = os.path.join(get_buildroot(), target.target_base)
           source_root_relative_path = os.path.relpath(abs_source_path, abs_source_root_path)
           write_target_source(target, source_root_relative_path)

@@ -16,5 +16,6 @@ python_library(
     'src/python/pants/backend/core/targets:common',
     'src/python/pants/backend/python:python_artifact',
     'src/python/pants/base:target',
+    'src/python/pants/base:payload_field',
   ],
 )

@@ -13,7 +13,7 @@ from twitter.common.lang import Compatibility
 from pants.backend.python.python_artifact import PythonArtifact
 from pants.backend.core.targets.resources import Resources
 from pants.base.address import SyntheticAddress
-from pants.base.payload_field import combine_hashes, PayloadField
+from pants.base.payload_field import combine_hashes, PayloadField, SourcesField
 from pants.base.target import Target
 from pants.base.exceptions import TargetDefinitionException
 
@@ -53,12 +53,11 @@ class PythonTarget(Target):
       format, e.g. ``'CPython>=3', or just ['>=2.7','<3']`` for requirements
       agnostic to interpreter class.
     """
-    sources_rel_path = sources_rel_path or address.spec_path
     self.payload.add_fields({
       'sources': SourcesField(sources=self.assert_list(sources),
-                              sources_rel_path=sources_rel_path),
+                              sources_rel_path=address.spec_path),
       'resources': SourcesField(sources=self.assert_list(resources),
-                                sources_rel_path=sources_rel_path),
+                                sources_rel_path=address.spec_path),
       'provides': provides,
       'compatibility': CompatibilityField(maybe_list(compatibility or ())),
     })
@@ -97,8 +96,8 @@ class PythonTarget(Target):
   def provided_binaries(self):
     def binary_iter():
       if self.payload.provides:
-        for key, spec in self.payload.provides.items():
-          address = SyntheticAddress.parse(binary, relative_to=self.address.spec_path)
+        for key, binary_spec in self.payload.provides.binaries.items():
+          address = SyntheticAddress.parse(binary_spec, relative_to=self.address.spec_path)
           yield (key, self._build_graph.get_target(address))
     return dict(binary_iter())
 
@@ -128,9 +127,8 @@ class PythonTarget(Target):
 
   def walk(self, work, predicate=None):
     super(PythonTarget, self).walk(work, predicate)
-    if self.provides and self.provides.binaries:
-      for binary in self.provides.binaries.values():
-        binary.walk(work, predicate)
+    for binary in self.provided_binaries.values():
+      binary.walk(work, predicate)
 
   def _synthesize_resources_target(self):
     # Create an address for the synthetic target.
@@ -142,6 +140,6 @@ class PythonTarget(Target):
       synthetic_address = SyntheticAddress.parse(spec=spec)
 
     self._build_graph.inject_synthetic_target(synthetic_address, Resources,
-                                              sources=self.payload.resources,
+                                              sources=self.payload.resources.source_paths,
                                               derived_from=self)
     return self._build_graph.get_target(synthetic_address)

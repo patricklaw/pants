@@ -10,7 +10,7 @@ from textwrap import dedent
 
 import pytest
 
-from pants.backend.jvm.targets.artifact import Artifact
+from pants.backend.jvm.artifact import Artifact
 from pants.backend.jvm.targets.jar_dependency import JarDependency
 from pants.backend.jvm.targets.jar_library import JarLibrary
 from pants.backend.jvm.targets.java_library import JavaLibrary

@@ -5,6 +5,7 @@
 from __future__ import (nested_scopes, generators, division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
+from hashlib import sha1
 import os
 import re
 
@@ -16,7 +17,7 @@ from pants.backend.jvm.targets.jvm_target import JvmTarget
 from pants.base.build_environment import get_buildroot
 from pants.base.build_manual import manual
 from pants.base.exceptions import TargetDefinitionException
-from pants.base.payload_field import BundleField
+from pants.base.payload_field import BundleField, PayloadField
 from pants.base.target import Target
 from pants.base.validation import assert_list
 
@@ -338,6 +339,18 @@ class Bundle(object):
     else:
       self.mapper = mapper or RelativeToMapper(os.path.join(get_buildroot(), self._rel_path))
 
+  # def _compute_fingerprint(self):
+  #   hasher = sha1()
+  #   hasher.update(bytes(hash(self.mapper)))
+  #   hasher.update(self._rel_path)
+  #   for abs_path in sorted(self.filemap.keys()):
+  #     buildroot_relative_path = os.path.relpath(abs_path, get_buildroot())
+  #     hasher.update(buildroot_relative_path)
+  #     hasher.update(self.filemap[abs_path])
+  #     with open(abs_path, 'rb') as f:
+  #       hasher.update(f.read())
+  #   return hasher.hexdigest()
+
   @manual.builddict()
   def add(self, *filesets):
     """Add files to the bundle, where ``filesets`` is a filename, ``globs``, or ``rglobs``.
@@ -384,14 +397,13 @@ class JvmApp(Target):
       artifact. In most cases this parameter is not necessary.
     """
     self.payload.add_fields({
-      'bundles': BundleField(bundles),
+      'bundles': BundleField(bundles or []),
     })
     super(JvmApp, self).__init__(name=name, **kwargs)
 
     if name == basename:
       raise TargetDefinitionException(self, 'basename must not equal name.')
     self._basename = basename or name
-
     self._binary = binary
 
   @property

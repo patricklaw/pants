@@ -9,6 +9,8 @@ from abc import abstractmethod
 from hashlib import sha1
 import os
 
+import six
+
 from twitter.common.collections import OrderedSet
 from twitter.common.lang import AbstractClass
 
@@ -44,7 +46,7 @@ class GenericWrapperField(PayloadField):
 
 class SourcesField(PayloadField):
   def __init__(self, sources_rel_path, sources):
-    self.sources_rel_path = sources_rel_path
+    self.rel_path = sources_rel_path
     self.source_paths = assert_list(sources)
 
   @property
@@ -55,11 +57,11 @@ class SourcesField(PayloadField):
     return any(source.endswith(extension) for source in self.source_paths)
 
   def relative_to_buildroot(self):
-    return [os.path.join(self.sources_rel_path, source) for source in self.source_paths]
+    return [os.path.join(self.rel_path, source) for source in self.source_paths]
 
   def _compute_fingerprint(self):
     hasher = sha1()
-    hasher.update(self.sources_rel_path)
+    hasher.update(self.rel_path)
     for source in sorted(self.relative_to_buildroot()):
       hasher.update(source)
       with open(os.path.join(get_buildroot(), source), 'rb') as f:
@@ -109,7 +111,7 @@ def combine_hashes(hashes):
   return hasher.hexdigest()
 
 
-class BundleField(frozenset, PayloadField):
+class BundleField(tuple, PayloadField):
   def _compute_fingerprint(self):
     return combine_hashes(map(hash_bundle, self))
 
@@ -125,5 +127,9 @@ class ConfigurationsField(OrderedSet, PayloadField):
 
 
 class JarsField(tuple, PayloadField):
+  def _compute_fingerprint(self):
+    return combine_hashes(jar.id for jar in self)
+
+class StringField(six.text_type, PayloadField):
   def _compute_fingerprint(self):
     return combine_hashes(jar.id for jar in self)

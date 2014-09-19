@@ -191,6 +191,11 @@ class Target(AbstractTarget):
       self._payload = Payload()
     return self._payload
 
+  @property
+  def num_chunking_units(self):
+    return max(1, len(self.sources_relative_to_buildroot()))
+
+
   def assert_list(self, maybe_list, expected_type=Compatibility.string):
     return assert_list(maybe_list, expected_type,
                        raise_type=lambda msg: TargetDefinitionException(self, msg))
@@ -243,7 +248,11 @@ class Target(AbstractTarget):
     self._build_graph.walk_transitive_dependee_graph([self.address], work=invalidate_dependee)
 
   def has_sources(self, extension=''):
-    return self.payload.has_sources(extension)
+    sources_field = self.payload.get_field('sources')
+    if sources_field:
+      return sources_field.has_sources(extension)
+    else:
+      return False
 
   def sources_relative_to_buildroot(self):
     if self.has_sources():

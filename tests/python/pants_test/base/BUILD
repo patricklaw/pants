@@ -118,6 +118,7 @@ python_tests(
   dependencies = [
     '3rdparty/python/twitter/commons:twitter.common.collections',
     'src/python/pants/base:build_file',
+    'src/python/pants/backend/jvm:artifact',
     'src/python/pants/backend/jvm/targets:java',
     'src/python/pants/backend/jvm/targets:jvm',
     'src/python/pants/backend/jvm/targets:scala',

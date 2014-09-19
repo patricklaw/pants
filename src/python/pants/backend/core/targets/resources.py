@@ -26,10 +26,9 @@ class Resources(Target):
       BUILD file's directory.
     :type sources: ``Fileset`` or list of strings
     """
-    sources_rel_path = sources_rel_path or address.spec_path
     self.payload.add_fields({
       'sources': SourcesField(sources=self.assert_list(sources),
-                              sources_rel_path=sources_rel_path),
+                              sources_rel_path=address.spec_path),
     })
     super(Resources, self).__init__(address=address, **kwargs)
 

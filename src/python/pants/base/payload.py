@@ -64,7 +64,8 @@ class Payload(object):
     for key in sorted(field_keys):
       field = self._fields[key]
       hasher.update(key)
-      hasher.update(field.fingerprint())
+      if field is not None:
+        hasher.update(field.fingerprint())
     return hasher.hexdigest()
 
   def __getattr__(self, attr):
