@@ -6,7 +6,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
                         print_function, unicode_literals)
 
 from pants.base.target import Target
-from pants.base.payload import PythonRequirementLibraryPayload
+from pants.base.payload_field import PythonRequirementsField
 
 
 class PythonRequirementLibrary(Target):
@@ -18,7 +18,6 @@ class PythonRequirementLibrary(Target):
     :type requirements: List of :ref:`python_requirement <bdict_python_requirement>`\s
     """
     self.payload.add_fields({
-      'requirements': requirements,                        
+      'requirements': PythonRequirementsField(requirements or []),
     })
-    payload = PythonRequirementLibraryPayload(requirements)
-    super(PythonRequirementLibrary, self).__init__(*args, payload=payload, **kwargs)
+    super(PythonRequirementLibrary, self).__init__(*args, **kwargs)

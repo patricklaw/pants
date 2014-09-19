@@ -41,20 +41,6 @@ class PythonRequirement(object):
     # TODO(wickman) Unify this with PythonTarget .compatibility
     self.compatibility = compatibility or ['']
 
-  def _compute_fingerprint(self):
-    hash_items = (
-      self._requirement.hashCmp,
-      self._repository,
-      self._name,
-      self._use_2to3,
-      hash(self._version_filter.func_code),
-      self.compatibility,
-    )
-    return sha1(json.dumps(hash_items,
-                           ensure_ascii=True,
-                           allow_nan=False,
-                           sort_keys=True)).hexdigest()
-
   def should_build(self, python, platform):
     return self._version_filter(python, platform)
 

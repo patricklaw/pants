@@ -12,7 +12,12 @@ from pants.backend.jvm.targets.exportable_jvm_library import ExportableJvmLibrar
 from pants.backend.jvm.targets.jar_library import JarLibrary
 from pants.backend.jvm.targets.jvm_target import JvmTarget
 from pants.base.address import SyntheticAddress
-from pants.base.payload import JavaProtobufLibraryPayload
+from pants.base.payload_field import combine_hashes, PayloadField
+
+
+class ImportsField(OrderedSet, PayloadField):
+  def _compute_fingerprint(self):
+    return combine_hashes(map(hash, self))
 
 
 class JavaProtobufLibrary(ExportableJvmLibrary):
@@ -30,20 +35,14 @@ class JavaProtobufLibrary(ExportableJvmLibrary):
       objects and addresses of :class:`pants.backend.jvm.targets.jar_library.JarLibrary` targets
       which contain .proto definitions.
     """
+    self.payload.add_fields({
+      'raw_imports': ImportsField(imports or [])
+    })
     super(JavaProtobufLibrary, self).__init__(**kwargs)
     self.add_labels('codegen')
     if imports:
       self.add_labels('has_imports')
-    self.raw_imports = OrderedSet(imports or [])
     self._imports = None
-    self.payload = JavaProtobufLibraryPayload(
-        sources_rel_path=kwargs.get('sources_rel_path') or self.address.spec_path,
-        sources=kwargs.get('sources'),
-        provides=kwargs.get('provides'),
-        excludes=kwargs.get('excludes'),
-        configurations=kwargs.get('configurations'),
-        imports=OrderedSet(self.raw_imports),
-      )
 
   @property
   def traversable_specs(self):
@@ -54,7 +53,7 @@ class JavaProtobufLibrary(ExportableJvmLibrary):
 
   @property
   def _library_imports(self):
-    for dep in self.raw_imports:
+    for dep in self.payload.raw_imports:
       if isinstance(dep, Compatibility.string):
         yield dep
 
@@ -63,13 +62,17 @@ class JavaProtobufLibrary(ExportableJvmLibrary):
     """Returns the set of JarDependencys to be included when compiling this target."""
     if self._imports is None:
       libraries = OrderedSet(self._library_imports)
-      import_jars = self.raw_imports - libraries
+      import_jars = self.payload.raw_imports - libraries
       for spec in libraries:
         address = SyntheticAddress.parse(spec, relative_to=self.address.spec_path)
         target = self._build_graph.get_target(address)
         if isinstance(target, (JarLibrary, JvmTarget)):
           import_jars.update(target.jar_dependencies)
         else:
+          # TODO(pl): This should be impossible, since these specs are in
+          # traversable specs.  Likely this only would trigger when someone
+          # accidentally included a dependencies on a non-{Jvm,JarLib} target.
+          # Fix this in a followup.
           raise self.PrematureImportPokeError(
               "{address}: Failed to resolve import '{spec}'.".format(
                   address=self.address.spec,

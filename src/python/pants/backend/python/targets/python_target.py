@@ -13,9 +13,14 @@ from twitter.common.lang import Compatibility
 from pants.backend.python.python_artifact import PythonArtifact
 from pants.backend.core.targets.resources import Resources
 from pants.base.address import SyntheticAddress
-from pants.base.payload import PythonPayload
+from pants.base.payload_field import combine_hashes, PayloadField
 from pants.base.target import Target
 from pants.base.exceptions import TargetDefinitionException
+
+
+class CompatibilityField(tuple, PayloadField):
+  def _compute_fingerprint(self):
+    return combine_hashes(map(hash, self))
 
 
 class PythonTarget(Target):
@@ -55,7 +60,7 @@ class PythonTarget(Target):
       'resources': SourcesField(sources=self.assert_list(resources),
                                 sources_rel_path=sources_rel_path),
       'provides': provides,
-      'compatibility': GenericWrapperField(maybe_list(compatibility or ())),
+      'compatibility': CompatibilityField(maybe_list(compatibility or ())),
     })
     super(PythonTarget, self).__init__(address=address, **kwargs)
     self._resource_target_specs = resource_targets

@@ -11,7 +11,10 @@ from pants.backend.core.targets.resources import Resources
 from pants.backend.jvm.targets.exclude import Exclude
 from pants.base.address import SyntheticAddress
 from pants.base.exceptions import TargetDefinitionException
-from pants.base.payload import JvmTargetPayload
+from pants.base.payload_field import (ConfigurationsField,
+                                      ExcludesField,
+                                      ProvidesField,
+                                      SourcesField)
 from pants.base.target import Target
 from pants.base.validation import assert_list
 from pants.backend.jvm.targets.jar_library import JarLibrary
@@ -45,7 +48,7 @@ class JvmTarget(Target, Jarable):
       'configurations': ConfigurationsField(self.assert_list(configurations)),
     })
     self._resource_specs = self.assert_list(resources)
-    super(JvmTarget, self).__init__(address=address, payload=payload, **kwargs)
+    super(JvmTarget, self).__init__(address=address, **kwargs)
     self.add_labels('jvm')
 
   _jar_dependencies = None

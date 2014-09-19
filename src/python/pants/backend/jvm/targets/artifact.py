@@ -5,10 +5,15 @@
 from __future__ import (nested_scopes, generators, division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
+from hashlib import sha1
+
+import six
 from twitter.common.lang import Compatibility
 
+from pants.base.payload_field import PayloadField
 
-class Artifact(object):
+
+class Artifact(PayloadField):
   """Represents a jvm artifact ala maven or ivy.
 
   Used in the ``provides`` parameter to *jvm*\_library targets.
@@ -40,14 +45,15 @@ class Artifact(object):
     self.description = description
 
   def __eq__(self, other):
-    result = other and (
-      type(other) == Artifact) and (
-      self.org == other.org) and (
-      self.name == other.name)
-    return result
+    return (type(other) == Artifact and
+            self.org == other.org and
+            self.name == other.name)
 
   def __hash__(self):
-    return hash((self.org, self.name))
+    return hash((self.org, self.name, self.repo))
+
+  def _compute_fingerprint(self):
+    return sha1(six.binary_type(hash(self))).hexdigest()
 
   def __ne__(self, other):
     return not self.__eq__(other)

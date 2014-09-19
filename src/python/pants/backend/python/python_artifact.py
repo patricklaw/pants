@@ -5,7 +5,11 @@
 from __future__ import (nested_scopes, generators, division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
+from hashlib import sha1
+import json
+
 from pants.base.build_manual import manual
+from pants.base.payload_field import PayloadField
 
 
 class PythonArtifact(PayloadField):
@@ -61,10 +65,10 @@ class PythonArtifact(PayloadField):
     return self._binaries
 
   def _compute_fingerprint(self):
-    return json.dumps((self._kw, self._binaries),
-                      ensure_ascii=True,
-                      allow_nan=False,
-                      sort_keys=True)
+    return sha1(json.dumps((self._kw, self._binaries),
+                           ensure_ascii=True,
+                           allow_nan=False,
+                           sort_keys=True)).hexdigest()
 
   @manual.builddict()
   def with_binaries(self, *args, **kw):

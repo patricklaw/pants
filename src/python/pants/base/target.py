@@ -16,7 +16,7 @@ from pants.base.build_manual import manual
 from pants.base.exceptions import TargetDefinitionException
 from pants.base.fingerprint_strategy import DefaultFingerprintStrategy
 from pants.base.hash_utils import hash_all
-from pants.base.payload import EmptyPayload
+from pants.base.payload import Payload
 from pants.base.source_root import SourceRoot
 from pants.base.target_addressable import TargetAddressable
 from pants.base.validation import assert_list
@@ -192,7 +192,8 @@ class Target(AbstractTarget):
     return self._payload
 
   def assert_list(self, maybe_list, expected_type=Compatibility.string):
-    return assert_list(maybe_list, expected_type, raise_type=lambda msg: TargetDefinitionException(self, msg))
+    return assert_list(maybe_list, expected_type,
+                       raise_type=lambda msg: TargetDefinitionException(self, msg))
 
   def compute_invalidation_hash(self, fingerprint_strategy=None):
     fingerprint_strategy = fingerprint_strategy or DefaultFingerprintStrategy()
@@ -246,7 +247,7 @@ class Target(AbstractTarget):
 
   def sources_relative_to_buildroot(self):
     if self.has_sources():
-      return self.payload.sources_relative_to_buildroot()
+      return self.payload.sources.relative_to_buildroot()
     else:
       return []
 
