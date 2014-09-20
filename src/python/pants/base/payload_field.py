@@ -118,12 +118,12 @@ class BundleField(tuple, PayloadField):
 
 class ExcludesField(OrderedSet, PayloadField):
   def _compute_fingerprint(self):
-    return combine_hashes(map(hash, self))
+    return combine_hashes(six.binary_type(hash(_) for _ in self))
 
 
 class ConfigurationsField(OrderedSet, PayloadField):
   def _compute_fingerprint(self):
-    return combine_hashes(map(hash, self))
+    return combine_hashes(six.binary_type(hash(_) for _ in self))
 
 
 class JarsField(tuple, PayloadField):
@@ -132,4 +132,4 @@ class JarsField(tuple, PayloadField):
 
 class StringField(six.text_type, PayloadField):
   def _compute_fingerprint(self):
-    return combine_hashes(jar.id for jar in self)
+    return combine_hashes(s.encode('utf-8') for s in self)

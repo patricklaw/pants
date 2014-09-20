@@ -5,6 +5,8 @@
 from __future__ import (nested_scopes, generators, division, absolute_import, with_statement,
                         print_function, unicode_literals)
 
+import six
+
 from twitter.common.collections import OrderedSet
 from twitter.common.lang import Compatibility
 
@@ -17,7 +19,7 @@ from pants.base.payload_field import combine_hashes, PayloadField
 
 class ImportsField(OrderedSet, PayloadField):
   def _compute_fingerprint(self):
-    return combine_hashes(map(hash, self))
+    return combine_hashes(six.binary_type(hash(_) for _ in self))
 
 
 class JavaProtobufLibrary(ExportableJvmLibrary):

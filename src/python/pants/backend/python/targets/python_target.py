@@ -117,7 +117,7 @@ class PythonTarget(Target):
         return tgt
       resource_targets.extend(map(get_target, self._resource_target_specs))
 
-    if self.payload.resources:
+    if self.payload.resources.source_paths:
       if not self._synthetic_resources_target:
         # This must happen lazily: we don't have enough context in __init__() to do this there.
         self._synthetic_resources_target = self._synthesize_resources_target()

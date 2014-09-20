@@ -66,7 +66,7 @@ public_repo = Repository(name = 'public',
 
 testing_repo = Repository(name = 'testing',
                           url = 'http://maven.twttr.com',
-                          push_db_basedir = os.path.join('ivy', 'pushdb'))
+                          push_db_basedir = os.path.join('testprojects', 'ivy', 'pushdb'))
 
 
 def build_file_aliases():
@@ -95,6 +95,7 @@ def build_file_aliases():
       'jar_rules': JarRules,
       'Repository': Repository,
       'public': public_repo,
+      'testing': testing_repo,
       'Skip': Skip,
     },
     context_aware_object_factories={
