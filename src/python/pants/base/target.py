@@ -249,9 +249,13 @@ class Target(AbstractTarget):
     fingerprint_strategy = fingerprint_strategy or DefaultFingerprintStrategy()
     if fingerprint_strategy not in self._cached_transitive_fingerprint_map:
       hasher = sha1()
-      direct_deps = sorted(self.dependencies)
-      for dep in direct_deps:
-        hasher.update(dep.transitive_invalidation_hash(fingerprint_strategy))
+      def dep_hash_iter():
+        for dep in self.dependencies:
+          dep_hash = dep.transitive_invalidation_hash(fingerprint_strategy)
+          if dep_hash:
+            yield dep_hash
+      for dep_hash in sorted(dep_hash_iter()):
+        hasher.update(dep_hash)
       target_hash = self.invalidation_hash(fingerprint_strategy)
       dependencies_hash = hasher.hexdigest()[:12]
       combined_hash = '{target_hash}.{deps_hash}'.format(target_hash=target_hash,
