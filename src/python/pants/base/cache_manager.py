@@ -234,23 +234,13 @@ class InvalidationCacheManager(object):
     # This will be a list of VersionedTargets that correspond to @targets.
     versioned_targets = []
 
-    # This will be a mapping from each target to its corresponding VersionedTarget.
-    versioned_targets_by_target = {}
-
-    # Map from id to current fingerprint of the target with that id. We update this as we iterate,
-    # in topological order, so when handling a target, this will already contain all its deps (in
-    # this round).
-    id_to_hash = {}
-
     for target in ordered_targets:
       cache_key = self._key_for(target, transitive=self._invalidate_dependents)
-      id_to_hash[target.id] = cache_key.hash
-
-      # Create a VersionedTarget corresponding to @target.
-      versioned_target = VersionedTarget(self, target, cache_key)
-
-      # Add the new VersionedTarget to the list of computed VersionedTargets.
-      versioned_targets.append(versioned_target)
+      if cache_key:
+        # Create a VersionedTarget corresponding to @target.
+        versioned_target = VersionedTarget(self, target, cache_key)
+        # Add the new VersionedTarget to the list of computed VersionedTargets.
+        versioned_targets.append(versioned_target)
 
     return versioned_targets
 
