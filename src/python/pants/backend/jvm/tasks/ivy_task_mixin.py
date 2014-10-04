@@ -36,9 +36,12 @@ class IvyResolveFingerprintStrategy(FingerprintStrategy):
     if isinstance(target, JarLibrary):
       return target.payload.fingerprint()
     elif isinstance(target, JvmTarget):
-      return target.payload.fingerprint(field_keys=('excludes', 'configurations'))
+      if target.payload.excludes and target.payload.configurations:
+        return target.payload.fingerprint(field_keys=('excludes', 'configurations'))
+      else:
+        return None
     else:
-      return sha1().hexdigest()
+      return None
 
   def __hash__(self):
     return hash(type(self))
@@ -100,7 +103,7 @@ class IvyTaskMixin(object):
         def exec_ivy():
           ivy_utils.exec_ivy(
               target_workdir=target_workdir,
-              targets=targets,
+              targets=global_vts.targets,
               args=args,
               ivy=ivy,
               workunit_name='ivy',
