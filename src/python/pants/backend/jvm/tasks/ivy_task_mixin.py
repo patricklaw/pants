@@ -36,7 +36,7 @@ class IvyResolveFingerprintStrategy(FingerprintStrategy):
     if isinstance(target, JarLibrary):
       return target.payload.fingerprint()
     elif isinstance(target, JvmTarget):
-      if target.payload.excludes and target.payload.configurations:
+      if target.payload.excludes or target.payload.configurations:
         return target.payload.fingerprint(field_keys=('excludes', 'configurations'))
       else:
         return None
@@ -79,7 +79,7 @@ class IvyTaskMixin(object):
     fingerprint_strategy = IvyResolveFingerprintStrategy()
 
     with self.invalidated(targets,
-                          invalidate_dependents=True,
+                          invalidate_dependents=False,
                           silent=silent,
                           fingerprint_strategy=fingerprint_strategy) as invalidation_check:
       global_vts = VersionedTargetSet.from_versioned_targets(invalidation_check.all_vts)
@@ -136,4 +136,4 @@ class IvyTaskMixin(object):
 
     with IvyUtils.cachepath(target_classpath_file) as classpath:
       stripped_classpath = [path.strip() for path in classpath]
-      return [path for path in stripped_classpath if ivy_utils.is_classpath_artifact(path)]
+      return ([path for path in stripped_classpath if ivy_utils.is_classpath_artifact(path)], global_vts.targets)
