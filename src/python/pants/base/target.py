@@ -241,6 +241,8 @@ class Target(AbstractTarget):
       for dep_hash in sorted(dep_hash_iter()):
         hasher.update(dep_hash)
       target_hash = self.invalidation_hash(fingerprint_strategy)
+      if target_hash is None and not list(dep_hash_iter()):
+        return None
       dependencies_hash = hasher.hexdigest()[:12]
       combined_hash = '{target_hash}.{deps_hash}'.format(target_hash=target_hash,
                                                          deps_hash=dependencies_hash)

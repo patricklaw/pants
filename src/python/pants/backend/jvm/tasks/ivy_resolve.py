@@ -129,12 +129,14 @@ class IvyResolve(NailgunTask, IvyTaskMixin, JvmToolTaskMixin):
       # multiple exclusives groups will end up as the last exclusives group run.  I'd like to
       # deprecate this eventually, but some people rely on it, and it's not clear to me right now
       # whether telling them to use IdeaGen instead is feasible.
-      classpath = self.ivy_resolve(group_targets,
-                                   executor=executor,
-                                   symlink_ivyxml=True,
-                                   workunit_name='ivy-resolve')
+      classpath, relevant_targets = self.ivy_resolve(
+        group_targets,
+        executor=executor,
+        symlink_ivyxml=True,
+        workunit_name='ivy-resolve',
+      )
       if self.context.products.is_required_data('ivy_jar_products'):
-        self._populate_ivy_jar_products(group_targets)
+        self._populate_ivy_jar_products(relevant_targets)
       for conf in self._confs:
         # It's important we add the full classpath as an (ordered) unit for code that is classpath
         # order sensitive
@@ -142,7 +144,7 @@ class IvyResolve(NailgunTask, IvyTaskMixin, JvmToolTaskMixin):
         groups.update_compatible_classpaths(group_key, classpath_entries)
 
       if self._report:
-        self._generate_ivy_report(group_targets)
+        self._generate_ivy_report(relevant_targets)
 
     # TODO(ity): populate a Classpath object instead of mutating exclusives_groups
     create_jardeps_for = self.context.products.isrequired('jar_dependencies')
