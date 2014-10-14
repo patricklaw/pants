@@ -71,7 +71,7 @@ class IvyTaskMixin(object):
     ivy = Bootstrapper.default_ivy(java_executor=executor,
                                    bootstrap_workunit_factory=self.context.new_workunit)
     if not targets:
-      return []
+      return ([], set())
 
     ivy_workdir = os.path.join(self.context.new_options.for_global_scope().pants_workdir, 'ivy')
     ivy_utils = IvyUtils(config=self.context.config, log=self.context.log)
@@ -82,6 +82,8 @@ class IvyTaskMixin(object):
                           invalidate_dependents=False,
                           silent=silent,
                           fingerprint_strategy=fingerprint_strategy) as invalidation_check:
+      if not invalidation_check.all_vts:
+        return ([], set())
       global_vts = VersionedTargetSet.from_versioned_targets(invalidation_check.all_vts)
       target_workdir = os.path.join(ivy_workdir, global_vts.cache_key.hash)
       target_classpath_file = os.path.join(target_workdir, 'classpath')
