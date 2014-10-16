@@ -169,7 +169,7 @@ class JvmCompile(NailgunTaskBase, GroupMember, JvmToolTaskMixin):
     self._lazy_analysis_tools = None
 
     # The rough number of source files to build in each compiler pass.
-    self._partition_size_hint = self.get_options().partition_size_hint
+    self._partition_size_hint = int(self.get_options().partition_size_hint)
 
     # JVM options for running the compiler.
     self._jvm_options = self.context.config.getlist(config_section, 'jvm_args')
