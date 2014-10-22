@@ -49,9 +49,10 @@ class ArtifactCache(object):
     try:
       if missing_files:
         raise ArtifactCache.CacheError('Tried to cache nonexistent files: %s' % missing_files)
-      self.try_insert(cache_key, paths)
+      return self.try_insert(cache_key, paths)
     except Exception as e:
       logger.error('Error while writing to artifact cache: %s. ' % e)
+      return False
 
   def try_insert(self, cache_key, paths):
     """Attempt to cache the output of a build, without error-handling.
@@ -80,8 +81,4 @@ class ArtifactCache(object):
 
     Deleting non-existent artifacts is a no-op.
     """
-    pass
-
-  def prune(self, age_hours):
-    """Clean up cache files older than age_hours, if possible."""
     pass

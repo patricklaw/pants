@@ -13,7 +13,8 @@ from requests import RequestException
 
 from pants.cache.artifact import TarballArtifact
 from pants.cache.artifact_cache import ArtifactCache
-from pants.util.contextutil import temporary_file, temporary_file_path
+from pants.cache.local_artifact_cache import TempLocalArtifactCache
+from pants.util.contextutil import  temporary_dir, temporary_file, temporary_file_path
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,11 @@ class RESTfulArtifactCache(ArtifactCache):
 
   READ_SIZE_BYTES = 4 * 1024 * 1024
 
-  def __init__(self, artifact_root, url_base, compression):
+  def __init__(self, artifact_root, url_base, local):
     """
     url_base: The prefix for urls on some RESTful service. We must be able to PUT and GET to any
               path under this base.
-    :param int compression: compression level (of false-y to skip compression) for artifacts
+    :param BaseLocalArtifactCache local: local cache instance for storing and creating artifacts
     """
     ArtifactCache.__init__(self, artifact_root)
     parsed_url = urlparse.urlparse(url_base)
@@ -43,7 +44,7 @@ class RESTfulArtifactCache(ArtifactCache):
     self._timeout_secs = 4.0
     self._netloc = parsed_url.netloc
     self._path_prefix = parsed_url.path.rstrip(b'/')
-    self.compression = compression
+    self._localcache = local
 
     # To enable connection reuse, all requests must be created from same session.
     # TODO: Re-evaluate session's life-cycle if/when a longer-lived pants process exists.
@@ -51,60 +52,44 @@ class RESTfulArtifactCache(ArtifactCache):
 
 
   def try_insert(self, cache_key, paths):
-    with temporary_file_path() as tarfile:
-      artifact = TarballArtifact(self.artifact_root, tarfile, self.compression)
-      artifact.collect(paths)
 
+    # Delegate creation of artifact to local cache.
+    with self._localcache.insert_paths(cache_key, paths) as tarfile:
+      # Upload local artifact to remote cache.
       with open(tarfile, 'rb') as infile:
         remote_path = self._remote_path_for_key(cache_key)
         if not self._request('PUT', remote_path, body=infile):
           raise self.CacheError('Failed to PUT to %s. Error: 404' % self._url_string(remote_path))
+        return True
 
   def has(self, cache_key):
+    if self._localcache.has(cache_key):
+      return True
     return self._request('HEAD', self._remote_path_for_key(cache_key)) is not None
 
   def use_cached_files(self, cache_key):
-    # This implementation fetches the appropriate tarball and extracts it.
+    if self._localcache.has(cache_key):
+      return self._localcache.use_cached_files(cache_key)
+
     remote_path = self._remote_path_for_key(cache_key)
     try:
-      # Send an HTTP request for the tarball.
       response = self._request('GET', remote_path)
-      if response is None:
-        return None
-
-      with temporary_file() as outfile:
-        total_bytes = 0
-        # Read the data in a loop.
-        for chunk in response.iter_content(self.READ_SIZE_BYTES):
-          outfile.write(chunk)
-          total_bytes += len(chunk)
-
-        outfile.close()
-        self.log.debug('Read %d bytes from artifact cache at %s' %
-                       (total_bytes,self._url_string(remote_path)))
-
-        # Extract the tarfile.
-        artifact = TarballArtifact(self.artifact_root, outfile.name, self.compression)
-        artifact.extract()
-        return artifact
+      if response is not None:
+        # Delegate storage and extraction to local cache
+        byte_iter = response.iter_content(self.READ_SIZE_BYTES)
+        return self._localcache.store_and_use_artifact(cache_key, byte_iter)
     except Exception as e:
       logger.warn('\nError while reading from remote artifact cache: %s\n' % e)
-      return None
+
+    return False
 
   def delete(self, cache_key):
+    self._localcache.delete(cache_key)
     remote_path = self._remote_path_for_key(cache_key)
     self._request('DELETE', remote_path)
 
-  def prune(self, age_hours):
-    # Doesn't make sense for a client to prune a remote server.
-    # Better to run tmpwatch on the server.
-    pass
-
   def _remote_path_for_key(self, cache_key):
-    # Note: it's important to use the id as well as the hash, because two different targets
-    # may have the same hash if both have no sources, but we may still want to differentiate them.
-    return '%s/%s/%s%s' % (self._path_prefix, cache_key.id, cache_key.hash,
-                           '.tar.gz' if self.compression else '.tar')
+    return '%s/%s/%s.tgz' % (self._path_prefix, cache_key.id, cache_key.hash)
 
   # Returns a response if we get a 200, None if we get a 404 and raises an exception otherwise.
   def _request(self, method, path, body=None):

@@ -7,19 +7,20 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 
 import SimpleHTTPServer
 import SocketServer
+import logging
 import os
 import unittest2 as unittest
 from threading import Thread
 
 from pants.base.build_invalidator import CacheKey
 from pants.cache.cache_setup import create_artifact_cache, select_best_url
-from pants.cache.combined_artifact_cache import CombinedArtifactCache
-from pants.cache.local_artifact_cache import LocalArtifactCache
+from pants.cache.local_artifact_cache import LocalArtifactCache, TempLocalArtifactCache
 from pants.cache.restful_artifact_cache import RESTfulArtifactCache
 from pants.util.contextutil import pushd, temporary_dir, temporary_file
 from pants.util.dirutil import safe_mkdir
 from pants_test.testutils.mock_logger import MockLogger
 
+logging.basicConfig()
 
 class MockPinger(object):
   def __init__(self, hosts_to_times):
@@ -81,7 +82,7 @@ class TestArtifactCache(unittest.TestCase):
       cachedir = os.path.join(tmpdir, 'cachedir')  # Must be a real path, so we can safe_mkdir it.
       check(LocalArtifactCache, cachedir)
       check(RESTfulArtifactCache, 'http://localhost/bar')
-      check(CombinedArtifactCache, [cachedir, 'http://localhost/bar'])
+      check(RESTfulArtifactCache, [cachedir, 'http://localhost/bar'])
 
 
   def test_local_cache(self):
@@ -101,9 +102,10 @@ class TestArtifactCache(unittest.TestCase):
           httpd_thread = Thread(target=httpd.serve_forever)
           httpd_thread.start()
           with temporary_dir() as artifact_root:
+            tmp = TempLocalArtifactCache(artifact_root)
             artifact_cache = RESTfulArtifactCache(artifact_root,
                                                   'http://localhost:{0}'.format(port),
-                                                  compression=1)
+                                                  tmp)
             self.do_test_artifact_cache(artifact_cache)
     finally:
       if httpd:
@@ -142,8 +144,8 @@ class TestArtifactCache(unittest.TestCase):
       artifact_cache.delete(key)
       self.assertFalse(artifact_cache.has(key))
 
-  def test_combined_cache(self):
-    """Make sure that the combined cache finds what it should and that it backfills."""
+  def test_local_backed_remote_cache(self):
+    """make sure that the combined cache finds what it should and that it backfills"""
     httpd = None
     httpd_thread = None
     try:
@@ -155,11 +157,11 @@ class TestArtifactCache(unittest.TestCase):
             httpd_thread = Thread(target=httpd.serve_forever)
             httpd_thread.start()
             with temporary_dir() as artifact_root:
-              local = LocalArtifactCache(None, artifact_root, cache_root, compression=1)
-              remote = RESTfulArtifactCache(MockLogger(), artifact_root,
-                                            'http://localhost:{0}'.format(port),
-                                            compression=1)
-              combined = CombinedArtifactCache([local, remote])
+              url = 'http://localhost:{0}'.format(port)
+              local = LocalArtifactCache(artifact_root, cache_root, compression=1)
+              tmp = TempLocalArtifactCache(artifact_root)
+              remote = RESTfulArtifactCache(artifact_root, url, tmp)
+              combined = RESTfulArtifactCache(artifact_root, url, local)
 
               key = CacheKey('muppet_key', 'fake_hash', 42)
 
@@ -187,6 +189,7 @@ class TestArtifactCache(unittest.TestCase):
                 # Add to only remote cache.
                 remote.insert(key, [path])
 
+                # After insertion to remote, remote and only remote should have key
                 self.assertFalse(local.has(key))
                 self.assertTrue(remote.has(key))
                 self.assertTrue(combined.has(key))

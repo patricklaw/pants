@@ -52,7 +52,3 @@ class ReadWriteArtifactCache(ArtifactCache):
   def delete(self, cache_key):
     if self._write_artifact_cache:
       self._write_artifact_cache.delete(cache_key)
-
-  def prune(self, age_hours):
-    if self._write_artifact_cache:
-      self._write_artifact_cache.prune(age_hours)

@@ -8,8 +8,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
 import os
 import urlparse
 
-from pants.cache.combined_artifact_cache import CombinedArtifactCache
-from pants.cache.local_artifact_cache import LocalArtifactCache
+from pants.cache.local_artifact_cache import LocalArtifactCache, TempLocalArtifactCache
 from pants.cache.pinger import Pinger
 from pants.cache.restful_artifact_cache import RESTfulArtifactCache
 
@@ -30,14 +29,15 @@ def select_best_url(spec, pinger, log):
   return best_url
 
 
-def create_artifact_cache(log, artifact_root, spec, task_name, compression, action='using'):
+def create_artifact_cache(log, artifact_root, spec, task_name, compression,
+                          action='using', local=None):
   """Returns an artifact cache for the specified spec.
 
   spec can be:
     - a path to a file-based cache root.
     - a URL of a RESTful cache root.
     - a bar-separated list of URLs, where we'll pick the one with the best ping times.
-    - A list of the above, for a combined cache.
+    - A list or tuple of two specs, local, then remote, each as described above
   """
   if not spec:
     raise ValueError('Empty artifact cache spec')
@@ -54,14 +54,19 @@ def create_artifact_cache(log, artifact_root, spec, task_name, compression, acti
       if best_url:
         url = best_url.rstrip('/') + '/' + task_name
         log.info('%s %s remote artifact cache at %s' % (task_name, action, url))
-        return RESTfulArtifactCache(artifact_root, url)
+        local = local or TempLocalArtifactCache(artifact_root)
+        return RESTfulArtifactCache(artifact_root, url, local)
       else:
         log.warn('%s has no reachable artifact cache in %s.' % (task_name, spec))
         return None
     else:
       raise ValueError('Invalid artifact cache spec: %s' % spec)
-  elif isinstance(spec, (list, tuple)):
-    caches = [create_artifact_cache(log, artifact_root, x,
-                                    task_name, action, compression) for x in spec]
-    caches = filter(None, caches)
-    return CombinedArtifactCache(caches) if caches else None
+  elif isinstance(spec, (list, tuple)) and len(spec) is 1:
+    return create_artifact_cache(log, artifact_root, spec[0], task_name, compression, action)
+  elif isinstance(spec, (list, tuple)) and len(spec) is 2:
+    first = create_artifact_cache(log, artifact_root, spec[0], task_name, compression, action)
+    if not isinstance(first, LocalArtifactCache):
+      raise ValueError('first of two cache specs must be a local cache path')
+    return create_artifact_cache(log, artifact_root, spec[1], task_name, compression, action, first)
+  else:
+    raise ValueError('Invalid artifact cache spec: %s' % spec)
