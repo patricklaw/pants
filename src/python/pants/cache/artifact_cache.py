@@ -146,7 +146,7 @@ def call_use_cached_files(tup):
   return res
 
 def call_insert(tup):
-  """Importable helper for multi-proc calling of ArtifactCache.insert on an ArtifactCache instance.
+  """Importable helper for multi-proc calling of ArtifactCache.insert
 
   See docstring on call_use_cached_files explaining why this is useful.
 
