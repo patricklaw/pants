@@ -229,7 +229,10 @@ class InvalidationCacheManager(object):
     """
     # We must check the targets in this order, to ensure correctness if invalidate_dependents=True,
     # since we use earlier cache keys to compute later cache keys in this case.
-    ordered_targets = self._order_target_list(targets)
+    if self._invalidate_dependents:
+      ordered_targets = self._order_target_list(targets)
+    else:
+      ordered_targets = targets[:]
 
     # This will be a list of VersionedTargets that correspond to @targets.
     versioned_targets = []
