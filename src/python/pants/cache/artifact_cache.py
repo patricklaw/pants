@@ -137,11 +137,15 @@ def call_use_cached_files(tup):
 
   :param tup: A tuple of an ArtifactCache and a argument to ArtifactCache.use_cached_files
   """
-  res = tup[0].use_cached_files(tup[1])
-  sys.stderr.write('.')
-  return bool(res)
+  cache, key = tup
+  res = cache.use_cached_files(key)
+  if res:
+    sys.stderr.write('.')
+  else:
+    sys.stderr.write(' ')
+  return res
 
-def call_insert(cache, key, files, overwrite=False):
+def call_insert(tup):
   """Importable helper for multi-proc calling of ArtifactCache.insert
 
   See docstring on call_use_cached_files explaining why this is useful.
@@ -151,5 +155,6 @@ def call_insert(cache, key, files, overwrite=False):
   :param iterable<str> files: ArtifactCache.insert
   :param bool overwrite: ArtifactCache.insert
   """
+  cache, key, files, overwrite = tup
   return cache.insert(key, files, overwrite)
 
