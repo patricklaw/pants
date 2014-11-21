@@ -232,7 +232,7 @@ class InvalidationCacheManager(object):
     if self._invalidate_dependents:
       ordered_targets = self._order_target_list(targets)
     else:
-      ordered_targets = list(targets)
+      ordered_targets = sorted(list(targets))
 
     # This will be a list of VersionedTargets that correspond to @targets.
     versioned_targets = []
