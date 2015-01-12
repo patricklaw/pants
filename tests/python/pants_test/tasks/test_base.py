@@ -20,11 +20,11 @@ from pants.base.cmd_line_spec_parser import CmdLineSpecParser
 from pants.base.target import Target
 from pants.goal.context import Context
 from pants.goal.goal import Goal
-from pants.option.options_bootstrapper import register_bootstrap_options
+from pants.option.global_options import register_global_options
 from pants.option.options import Options
-from pants_test.base_test import BaseTest
+from pants.option.options_bootstrapper import register_bootstrap_options
 from pants_test.base.context_utils import create_config, create_run_tracker
-
+from pants_test.base_test import BaseTest
 
 def is_exe(name):
   result = subprocess.call(['which', name], stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
@@ -67,6 +67,12 @@ class TaskTest(BaseTest):
     options = Options(env={}, config=config, known_scopes=['', 'test'], args=args or [])
     # A lot of basic code uses these options, so always register them.
     register_bootstrap_options(options.register_global)
+
+    import pytest
+    pytest.set_trace()
+    options.register_global.__dict__['bootstrap'] = options.bootstrap_option_values()
+    pytest.set_trace()
+    register_global_options(options.register_global)
 
     task_type.options_scope = 'test'
     task_type.register_options_on_scope(options)

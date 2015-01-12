@@ -6,6 +6,7 @@ from __future__ import (nested_scopes, generators, division, absolute_import, wi
                         print_function, unicode_literals)
 
 from itertools import chain
+import re
 
 from pants.backend.core.tasks.console_task import ConsoleTask
 from pants.base.exceptions import TaskError
@@ -39,7 +40,7 @@ class ChangedFileTaskMixin(object):
     return self._mapper_cache
 
   def _changed_files(self):
-    """Determines the changed files using the SCM workspace and options."""
+    """Determines the files changed according to SCM/workspace and options."""
     if not self.context.workspace:
       raise TaskError('No workspace provided.')
     if not self.context.scm:
@@ -51,11 +52,12 @@ class ChangedFileTaskMixin(object):
       return self.context.workspace.touched_files(since)
 
   def _directly_changed_targets(self):
-    """Determine unique target addresses changed mapping scm changed files to targets"""
+    """Internal helper to find target addresses containing SCM changes."""
     targets_for_source = self._mapper.target_addresses_for_source
     return set(addr for src in self._changed_files() for addr in targets_for_source(src))
 
-  def _changed_targets(self):
+  def _find_changed_targets(self):
+    """Internal helper to find changed targets, optionally including their dependees."""
     build_graph = self.context.build_graph
     dependees_inclusion = self.get_options().include_dependees
 
@@ -81,6 +83,25 @@ class ChangedFileTaskMixin(object):
     # Should never get here.
     raise ValueError('Unknown dependee inclusion: "{}"'.format(dependees_inclusion))
 
+  def changed_targets(self):
+    """Find changed targets, according to SCM.
+
+    This is the intended entry point for finding changed targets unless callers have a specific
+    reason to call one of the above internal helpers. It will find changed targets and:
+      - Optionally find changes in a given diffspec (commit, branch, tag, range, etc).
+      - Iptionally include direct or transitive dependees.
+      - Optionally filter targets matching exclude_target_regexp.
+    """
+    # Find changed targets (and maybe their dependees).
+    changed = self._find_changed_targets()
+
+    # Remove any that match the exclude_target_regexp list.
+    excludes = [re.compile(pattern) for pattern in self.get_options().exclude_target_regexp]
+    return filter(
+      lambda addr: not any(exclude.search(addr.spec) is not None for exclude in excludes),
+      changed
+    )
+
 
 class WhatChanged(ConsoleTask, ChangedFileTaskMixin):
   """Emits the targets that have been modified since a given commit."""
@@ -96,5 +117,5 @@ class WhatChanged(ConsoleTask, ChangedFileTaskMixin):
       for f in sorted(self._changed_files()):
         yield f
     else:
-      for addr in sorted(self._changed_targets()):
+      for addr in sorted(self.changed_targets()):
         yield addr.spec
