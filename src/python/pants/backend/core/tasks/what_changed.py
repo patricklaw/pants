@@ -59,15 +59,18 @@ class ChangedFileTaskMixin(object):
     build_graph = self.context.build_graph
     dependees_inclusion = self.get_options().include_dependees
 
-    if dependees_inclusion != 'none':
-      # Load the whole build graph first since we'll need it for dependee finding anyway.
-      for address in self.context.address_mapper.scan_addresses():
-        build_graph.inject_address_closure(address)
-
     changed = self._directly_changed_targets()
+
+    # Skip loading the graph or any further work if no actually changed targets
+    if not changed:
+      return changed
 
     if dependees_inclusion == 'none':
       return changed
+
+    # Load the whole build graph first since we need it for dependee finding.
+    for address in self.context.address_mapper.scan_addresses():
+      build_graph.inject_address_closure(address)
 
     if dependees_inclusion == 'direct':
       return changed.union(*[build_graph.dependents_of(addr) for addr in changed])
@@ -76,7 +79,7 @@ class ChangedFileTaskMixin(object):
       return set(t.address for t in build_graph.transitive_dependees_of_addresses(changed))
 
     # Should never get here.
-    raise ValueError('Unknown dependee inclusion: {}'.format(dependees_inclusion))
+    raise ValueError('Unknown dependee inclusion: "{}"'.format(dependees_inclusion))
 
 
 class WhatChanged(ConsoleTask, ChangedFileTaskMixin):
