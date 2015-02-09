@@ -98,6 +98,7 @@ class JvmCompile(NailgunTaskBase, GroupMember):
   @classmethod
   def prepare(cls, options, round_manager):
     super(JvmCompile, cls).prepare(options, round_manager)
+    JvmDependencyAnalyzer.prepare(options, round_manager)
 
     round_manager.require_data('compile_classpath')
     round_manager.require_data('ivy_cache_dir')
@@ -809,12 +810,13 @@ class JvmCompile(NailgunTaskBase, GroupMember):
     make_products = lambda: defaultdict(MultipleRootedProducts)
     if self.context.products.is_required_data('classes_by_source'):
       self.context.products.safe_create_data('classes_by_source', make_products)
-    if self.context.products.is_required_data('classes_by_target'):
-      self.context.products.safe_create_data('classes_by_target', make_products)
 
     # Whether or not anything else requires resources_by_target, this task
     # uses it internally.
     self.context.products.safe_create_data('resources_by_target', make_products)
+
+    # JvmDependencyAnalyzer uses classes_by_target within this run
+    self.context.products.safe_create_data('classes_by_target', make_products)
 
   def _resources_by_class_file(self, class_file_name, resource_mapping):
     assert class_file_name.endswith(".class")

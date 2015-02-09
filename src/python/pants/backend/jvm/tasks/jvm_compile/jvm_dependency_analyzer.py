@@ -28,15 +28,16 @@ class JvmDependencyAnalyzer(object):
                target_whitelist):
 
     self._context = context
-    self._context.products.require_data('classes_by_target')
-    self._context.products.require_data('ivy_jar_products')
-
     self._check_missing_deps = check_missing_deps
     self._check_missing_direct_deps = check_missing_direct_deps
     self._check_unnecessary_deps = check_unnecessary_deps
 
     # These targets we will not report as having any dependency issues even if they do.
     self._target_whitelist = OrderedSet(target_whitelist)
+
+  @classmethod
+  def prepare(cls, options, round_manager):
+    round_manager.require_data('ivy_jar_products')
 
   def _compute_targets_by_file(self):
     """Returns a map from abs path of source, class or jar file to an OrderedSet of targets.
