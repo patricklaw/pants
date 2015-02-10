@@ -155,20 +155,10 @@ class JarDependency(object):
 
   @manual.builddict()
   def with_sources(self):
-    """This historically requested the artifact have its source jar fetched.
-    (This implies there *is* a source jar to fetch.) Used in contexts
-    that can use source jars (as of 2014, just eclipse and idea goals)."""
-    print("jar dependency org={org} name={name}:  with_sources() is now a noop and is deprecated."
-          .format(org=self.org, name=self.name), file=sys.stderr)
     return self
 
   @manual.builddict()
   def with_docs(self):
-    """This historically requested the artifact have its javadoc jar fetched.
-    (This implies there *is* a javadoc jar to fetch.) Used in contexts
-    that can use source jars (as of 2014, just eclipse and idea goals)."""
-    print("jar dependency org={org} name={name}:  with_docs() is now a noop and is deprecated."
-          .format(org=self.org, name=self.name), file=sys.stderr)
     return self
 
   @manual.builddict()
@@ -188,11 +178,6 @@ class JarDependency(object):
       be used to designate all public configurations.
     :param classifier: The maven classifier of this artifact.
     """
-    print(dedent("""
-    jar(...).with_artifact(...) is deprecated. Instead, use:
-    jar(..., artifacts=[ivy_artifact(...), ...]).  You'll need to supply a name= argument
-    to ivy_artifact.""").strip(),
-          file=sys.stderr)
     return self._with_artifact(name=name, type_=type_, ext=ext, url=url, configuration=configuration,
                                classifier=classifier)
 
