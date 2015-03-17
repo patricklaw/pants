@@ -161,14 +161,15 @@ class IvyUtils(object):
       paths = filter(None, infile.read().strip().split(os.pathsep))
     new_paths = []
     realpath_map = {path: os.path.realpath(path) for path in paths}
+    realpath_map[ivy_cache_dir] = os.path.realpath(ivy_cache_dir)
     for path in paths:
-      if not path.startswith(ivy_cache_dir):
+      if not path.startswith((ivy_cache_dir, realpath_map[ivy_cache_dir])):
         new_paths.append(path)
         continue
       if realpath_map[path] in existing_symlink_map:
         new_paths.append(existing_symlink_map[realpath_map[path]])
         continue
-      symlink = os.path.join(symlink_dir, os.path.relpath(path, ivy_cache_dir))
+      symlink = os.path.join(symlink_dir, os.path.relpath(realpath_map[path], realpath_map[ivy_cache_dir]))
       try:
         os.makedirs(os.path.dirname(symlink))
       except OSError as e:
@@ -176,7 +177,7 @@ class IvyUtils(object):
           raise
       # Note: The try blocks cannot be combined. It may be that the dir exists but the link doesn't.
       try:
-        os.symlink(path, symlink)
+        os.symlink(realpath_map[path], symlink)
       except OSError as e:
         # We don't delete and recreate the symlink, as this may break concurrently executing code.
         if e.errno != errno.EEXIST:
