@@ -160,12 +160,13 @@ class IvyUtils(object):
     with safe_open(inpath, 'r') as infile:
       paths = filter(None, infile.read().strip().split(os.pathsep))
     new_paths = []
+    realpath_map = {path: os.path.realpath(path) for path in paths}
     for path in paths:
       if not path.startswith(ivy_cache_dir):
         new_paths.append(path)
         continue
-      if path in existing_symlink_map:
-        new_paths.append(existing_symlink_map[path])
+      if realpath_map[path] in existing_symlink_map:
+        new_paths.append(existing_symlink_map[realpath_map[path]])
         continue
       symlink = os.path.join(symlink_dir, os.path.relpath(path, ivy_cache_dir))
       try:
@@ -183,7 +184,7 @@ class IvyUtils(object):
       new_paths.append(symlink)
     with safe_open(outpath, 'w') as outfile:
       outfile.write(':'.join(new_paths))
-    symlink_map = dict(zip(paths, new_paths))
+    symlink_map = {realpath_map[path]: symlink for path, symlink in zip(paths, new_paths)}
     return symlink_map
 
   @staticmethod
