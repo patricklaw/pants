@@ -21,6 +21,7 @@ from pants.base.build_graph import sort_targets
 from pants.base.exceptions import TaskError
 from pants.java.distribution.distribution import DistributionLocator
 from pants.option.custom_types import list_option
+from pants.util.memo import memoized_property
 
 
 class JvmDependencyCheck(JvmDependencyAnalyzer):
@@ -48,7 +49,18 @@ class JvmDependencyCheck(JvmDependencyAnalyzer):
 
     register('--missing-deps-whitelist', type=list_option, default=[],
              fingerprint=True,
-             help="Don't report these targets even if they have missing deps.")
+             help="Don't report these targets even if they have missing target -> target deps.")
+
+    register('--missing-file-deps-target-whitelist', type=list_option, default=[],
+             fingerprint=True,
+             advanced=True,
+             help="Don't report these targets even if they have missing target -> file deps.")
+
+    register('--missing-file-deps-file-pattern-whitelist', type=list_option, default=[],
+             fingerprint=True,
+             advanced=True,
+             help="Don't report missing target -> file dependencies if the file path matches any"
+                  " regular expression in this list.")
 
     register('--unnecessary-deps', choices=['off', 'warn', 'fatal'], default='off',
              fingerprint=True,
@@ -68,6 +80,18 @@ class JvmDependencyCheck(JvmDependencyAnalyzer):
     self._check_missing_direct_deps = munge_flag('missing_direct_deps')
     self._check_unnecessary_deps = munge_flag('unnecessary_deps')
     self._target_whitelist = self.get_options().missing_deps_whitelist
+    self._file_deps_target_whitelist = self.get_options().missing_file_deps_target_whitelist
+
+  @memoized_property
+  def file_pattern_whitelist_regexes(self):
+    return [
+      re.compile(pattern)
+      for pattern in self.get_options().missing_file_deps_file_pattern_whitelist
+    ]
+
+  @memoized_property
+  def file_pattern_whitelisted(self, path):
+    return any(pattern_re.search(path) for pattern_re in self.file_pattern_whitelist_regexes)
 
   @property
   def cache_target_dirs(self):
@@ -104,7 +128,16 @@ class JvmDependencyCheck(JvmDependencyAnalyzer):
         return [(tgt_pair, evidence) for (tgt_pair, evidence) in missing_deps
                             if tgt_pair[0].address.reference() not in self._target_whitelist]
 
+      def filter_file_whitelisted(missing_file_deps):
+        return [
+          (src_tgt, file_dep)
+          for src_tgt, file_dep in missing_file_deps
+          if src_tgt.address.reference() not in self._file_deps_target_whitelist
+          if not self.file_pattern_whitelisted(file_dep)
+        ]
+
       missing_tgt_deps = filter_whitelisted(missing_tgt_deps)
+      missing_file_deps = filter_file_whitelisted(missing_file_deps)
 
       if self._check_missing_deps and (missing_file_deps or missing_tgt_deps):
         log_fn = (self.context.log.error if self._check_missing_deps == 'fatal'
@@ -197,6 +230,8 @@ class JvmDependencyCheck(JvmDependencyAnalyzer):
 
     buildroot = get_buildroot()
     abs_srcs = [os.path.join(buildroot, src) for src in src_tgt.sources_relative_to_buildroot()]
+
+    # import pdb; pdb.set_trace()
     for src in abs_srcs:
       for actual_dep in filter(must_be_explicit_dep, actual_deps.get(src, [])):
         actual_dep_tgts = self.targets_by_file.get(actual_dep)
