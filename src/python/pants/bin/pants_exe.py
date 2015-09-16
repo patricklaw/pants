@@ -73,7 +73,18 @@ def _run(exiter):
 
   # Setup and run GoalRunner.
   goal_runner = GoalRunner.Factory(root_dir, options, build_config, run_tracker, reporting).setup()
-  result = goal_runner.run()
+
+  profile_path = os.environ.get('PANTS_PROFILE')
+  if profile_path:
+    import cProfile
+    profiler = cProfile.Profile()
+    try:
+      result = profiler.runcall(goal_runner.run)
+    finally:
+      profiler.dump_stats(profile_path)
+  else:
+    result = goal_runner.run()
+
   exiter.do_exit(result)
 
 
